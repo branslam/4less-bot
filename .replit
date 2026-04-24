@@ -32,3 +32,7 @@ outputType = "console"
 [deployment]
 deploymentTarget = "vm"
 run = ["node", "index.js"]
+
+[userenv]
+
+[userenv.shared]
