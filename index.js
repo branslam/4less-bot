@@ -1,5 +1,19 @@
 require("dotenv").config();
 
+// ====================== KEEP-ALIVE FOR REPLIT ======================
+const express = require("express");
+const app = express();
+
+app.get("/", (req, res) => {
+  res.send("4Less Bot is alive!");
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Keep-alive server running on port ${PORT}`);
+});
+// ================================================================
+
 const {
   Client,
   GatewayIntentBits,
@@ -3712,5 +3726,3 @@ client.on("channelDelete", async (channel) => {
     console.error("channelDelete sync error:", error);
   }
 });
-
-client.login(process.env.DISCORD_TOKEN);
