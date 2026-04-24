@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 
 const {
   Client,
@@ -13,12 +13,12 @@ const {
   PermissionFlagsBits,
   ModalBuilder,
   TextInputBuilder,
-  TextInputStyle
-} = require('discord.js');
+  TextInputStyle,
+} = require("discord.js");
 
-const discordTranscripts = require('discord-html-transcripts');
+const discordTranscripts = require("discord-html-transcripts");
 
-const math = require('mathjs');
+const math = require("mathjs");
 
 const {
   initDatabase,
@@ -49,17 +49,17 @@ const {
   recordHighStreak,
   incrementMistakes,
   getTopStreaks,
-  getTopMistakes
-} = require('./database');
+  getTopMistakes,
+} = require("./database");
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers
+    GatewayIntentBits.GuildMembers,
   ],
-  partials: [Partials.Channel]
+  partials: [Partials.Channel],
 });
 
 const userSelections = new Map();
@@ -70,20 +70,22 @@ const channelRenameCooldowns = new Map(); // channelId -> last rename timestamp
 const BROAD_APP_CHANNEL_MEMBER_LIMIT = 25;
 
 // Prevent bot crash on Discord rate limits
-client.on('error', error => console.error('Discord client error:', error));
-process.on('unhandledRejection', error => console.error('Unhandled promise rejection:', error));
+client.on("error", (error) => console.error("Discord client error:", error));
+process.on("unhandledRejection", (error) =>
+  console.error("Unhandled promise rejection:", error),
+);
 
-client.once('clientReady', async () => {
+client.once("clientReady", async () => {
   try {
     await initDatabase();
     console.log(`Logged in as ${client.user.tag}`);
-    console.log('✅ Postgres database connected and initialized.');
+    console.log("✅ Postgres database connected and initialized.");
 
     // Automatic rich presence
-    client.user.setActivity('Apply now!', { type: 0 }); // Playing • Apply now!
+    client.user.setActivity("Apply now!", { type: 0 }); // Playing • Apply now!
     console.log('✅ Rich presence set: "Apply now!"');
   } catch (error) {
-    console.error('Startup error:', error);
+    console.error("Startup error:", error);
   }
 });
 
@@ -109,11 +111,11 @@ function buildBotEmbed({
   description,
   fields = [],
   color = 0x2b2d31,
-  footerNote = null
+  footerNote = null,
 }) {
   const footerText = footerNote
     ? `Developed by Branslam • ${footerNote}`
-    : 'Developed by Branslam';
+    : "Developed by Branslam";
 
   const embed = new EmbedBuilder()
     .setColor(color)
@@ -122,7 +124,7 @@ function buildBotEmbed({
     .setThumbnail(getBotLogoUrl())
     .setFooter({
       text: footerText,
-      iconURL: getFooterIconUrl()
+      iconURL: getFooterIconUrl(),
     })
     .setTimestamp();
 
@@ -151,7 +153,7 @@ function setPendingAppSelection(channelId, ownerId, userIds) {
   pendingAppSelections.set(channelId, {
     ownerId,
     userIds,
-    timeout
+    timeout,
   });
 }
 
@@ -173,42 +175,42 @@ function extractMentionedUserId(raw) {
 }
 
 function parseIntegerInput(raw) {
-  const cleaned = raw.replace(/,/g, '').trim();
+  const cleaned = raw.replace(/,/g, "").trim();
   if (!/^\d+$/.test(cleaned)) return null;
   return parseInt(cleaned, 10);
 }
 
 function parseTicketTypeFlag(raw) {
-  const normalized = String(raw || '').toLowerCase();
-  if (normalized === 's') return 'standard';
-  if (normalized === 'p') return 'paid';
+  const normalized = String(raw || "").toLowerCase();
+  if (normalized === "s") return "standard";
+  if (normalized === "p") return "paid";
   return null;
 }
 
 function formatTicketTypeLabel(ticketType) {
-  return ticketType === 'paid' ? 'Paid' : 'Standard';
+  return ticketType === "paid" ? "Paid" : "Standard";
 }
 
 function formatPlatformLabel(value) {
-  if (value === 'pc') return 'PC';
-  if (value === 'mobile') return 'Mobile';
-  if (value === 'console') return 'Console';
+  if (value === "pc") return "PC";
+  if (value === "mobile") return "Mobile";
+  if (value === "console") return "Console";
   return value;
 }
 
 function formatActivityLabel(value) {
   const map = {
-    lt1: '<1 hour',
-    h1_3: '1–3 hours',
-    h4_8: '4–8 hours',
-    h9_24: '9–24 hours',
-    h25plus: '25+ hours'
+    lt1: "<1 hour",
+    h1_3: "1–3 hours",
+    h4_8: "4–8 hours",
+    h9_24: "9–24 hours",
+    h25plus: "25+ hours",
   };
   return map[value] || value;
 }
 
 function formatYesNo(value) {
-  return value === 'yes' ? 'Yes' : 'No';
+  return value === "yes" ? "Yes" : "No";
 }
 
 function hasOwnerAccess(member) {
@@ -225,9 +227,11 @@ async function resolveUser(guild, rawInput) {
   const userId = mentionId || (/^\d+$/.test(query) ? query : null);
 
   if (userId) {
-    return guild.members.cache.get(userId) ||
-           await guild.members.fetch(userId).catch(() => null) ||
-           await guild.users.fetch(userId).catch(() => null); // fallback for unbans
+    return (
+      guild.members.cache.get(userId) ||
+      (await guild.members.fetch(userId).catch(() => null)) ||
+      (await guild.users.fetch(userId).catch(() => null))
+    ); // fallback for unbans
   }
 
   return await findMemberFromQuery(guild, query);
@@ -239,7 +243,9 @@ async function getTicketOwnerOrMentioned(message) {
 
   // If replied to a message, use that author
   if (message.reference) {
-    const repliedMsg = await message.channel.messages.fetch(message.reference.messageId).catch(() => null);
+    const repliedMsg = await message.channel.messages
+      .fetch(message.reference.messageId)
+      .catch(() => null);
     if (repliedMsg && !repliedMsg.author.bot) {
       return repliedMsg.author;
     }
@@ -249,7 +255,10 @@ async function getTicketOwnerOrMentioned(message) {
 }
 
 function parseDurationString(raw) {
-  const match = String(raw || '').trim().toLowerCase().match(/^(\d+)([smhd])$/);
+  const match = String(raw || "")
+    .trim()
+    .toLowerCase()
+    .match(/^(\d+)([smhd])$/);
   if (!match) return null;
 
   const value = parseInt(match[1], 10);
@@ -257,10 +266,10 @@ function parseDurationString(raw) {
 
   let ms = 0;
 
-  if (unit === 's') ms = value * 1000;
-  if (unit === 'm') ms = value * 60 * 1000;
-  if (unit === 'h') ms = value * 60 * 60 * 1000;
-  if (unit === 'd') ms = value * 24 * 60 * 60 * 1000;
+  if (unit === "s") ms = value * 1000;
+  if (unit === "m") ms = value * 60 * 1000;
+  if (unit === "h") ms = value * 60 * 60 * 1000;
+  if (unit === "d") ms = value * 24 * 60 * 60 * 1000;
 
   const maxMs = 28 * 24 * 60 * 60 * 1000;
 
@@ -269,57 +278,63 @@ function parseDurationString(raw) {
   return {
     value,
     unit,
-    ms
+    ms,
   };
 }
 
 async function resolveGuildMember(guild, rawInput) {
-  const query = String(rawInput || '').trim();
+  const query = String(rawInput || "").trim();
   if (!query) return null;
 
   const mentionId = extractMentionedUserId(query);
   const userId = mentionId || (/^\d+$/.test(query) ? query : null);
 
   if (userId) {
-    return guild.members.cache.get(userId) ||
-      await guild.members.fetch(userId).catch(() => null);
+    return (
+      guild.members.cache.get(userId) ||
+      (await guild.members.fetch(userId).catch(() => null))
+    );
   }
 
   return await findMemberFromQuery(guild, query);
 }
 
 function formatRequirementValue(value) {
-  return String(value).toLowerCase() === 'null' ? 'Unavailable / N/A' : String(value);
+  return String(value).toLowerCase() === "null"
+    ? "Unavailable / N/A"
+    : String(value);
 }
 
 function evaluateStandardCriteria(data) {
   const failures = [];
 
-  if (data.activity === 'lt1') {
-    failures.push('Estimated weekly activity is under 1 hour.');
+  if (data.activity === "lt1") {
+    failures.push("Estimated weekly activity is under 1 hour.");
   }
 
-  if (typeof data.wins === 'number' && data.wins < 1200) {
-    failures.push('Wins are under 1200.');
+  if (typeof data.wins === "number" && data.wins < 1200) {
+    failures.push("Wins are under 1200.");
   }
 
   if (
-    typeof data.wins === 'number' &&
-    typeof data.kills === 'number' &&
+    typeof data.wins === "number" &&
+    typeof data.kills === "number" &&
     data.wins > data.kills
   ) {
-    failures.push('Wins are greater than kills, which likely means the values were swapped.');
+    failures.push(
+      "Wins are greater than kills, which likely means the values were swapped.",
+    );
   }
 
-  if (data.afkFarm === 'no') {
-    failures.push('Cannot AFK farm crowns.');
+  if (data.afkFarm === "no") {
+    failures.push("Cannot AFK farm crowns.");
   }
 
   return failures;
 }
 
 function buildBaseTicketChannelName(ticketInfo) {
-  return `ticket-${String(ticketInfo.ticket_number).padStart(3, '0')}`;
+  return `ticket-${String(ticketInfo.ticket_number).padStart(3, "0")}`;
 }
 
 function buildQueuedTicketChannelName(ticketInfo, queuePosition) {
@@ -336,7 +351,9 @@ async function refreshQueueNames(guild) {
 
       await setTicketQueuePosition(ticket.channel_id, newPosition);
 
-      const channel = await guild.channels.fetch(ticket.channel_id).catch(() => null);
+      const channel = await guild.channels
+        .fetch(ticket.channel_id)
+        .catch(() => null);
       if (!channel) continue;
 
       const desiredName = buildQueuedTicketChannelName(ticket, newPosition);
@@ -346,12 +363,15 @@ async function refreshQueueNames(guild) {
           await channel.setName(desiredName);
           console.log(`[QUEUE] Updated name: ${channel.name} → ${desiredName}`);
         } catch (err) {
-          console.error(`[QUEUE] Rename failed for ${ticket.channel_id}:`, err.message);
+          console.error(
+            `[QUEUE] Rename failed for ${ticket.channel_id}:`,
+            err.message,
+          );
         }
       }
     }
   } catch (error) {
-    console.error('[QUEUE] Critical error in refreshQueueNames:', error);
+    console.error("[QUEUE] Critical error in refreshQueueNames:", error);
   }
 }
 
@@ -362,9 +382,14 @@ async function resetChannelNameFromTicket(channel, ticketInfo) {
 
   try {
     await channel.setName(desiredName);
-    console.log(`[QUEUE] Reset name for ticket ${ticketInfo.ticket_number} → ${desiredName}`);
+    console.log(
+      `[QUEUE] Reset name for ticket ${ticketInfo.ticket_number} → ${desiredName}`,
+    );
   } catch (error) {
-    console.error(`[QUEUE] Failed to reset name for ${channel.id}:`, error.message);
+    console.error(
+      `[QUEUE] Failed to reset name for ${channel.id}:`,
+      error.message,
+    );
     // Don't crash the command
   }
 }
@@ -383,35 +408,36 @@ function setChannelRenameCooldown(channelId) {
 
 function buildRequirementsEmbed(requirements) {
   return buildBotEmbed({
-    title: '📋 Clan Requirements',
-    description: '✨ Here are the current requirements for **standard members** to stay in the clan:',
+    title: "📋 Clan Requirements",
+    description:
+      "✨ Here are the current requirements for **standard members** to stay in the clan:",
     fields: [
       {
-        name: '👑 Standard Members',
+        name: "👑 Standard Members",
         value: `${requirements.standardCrowns} crowns per week`,
-        inline: true
+        inline: true,
       },
       {
-        name: '💎 Server Boosters',
+        name: "💎 Server Boosters",
         value: `${requirements.boosterCrowns} crowns per week`,
-        inline: true
+        inline: true,
       },
       {
-        name: '🛡️ Staff',
+        name: "🛡️ Staff",
         value: `${requirements.staffCrowns} crowns per week`,
-        inline: true
+        inline: true,
       },
       {
-        name: '⚔️ AP Requirement',
+        name: "⚔️ AP Requirement",
         value: formatRequirementValue(requirements.ap),
-        inline: true
+        inline: true,
       },
       {
-        name: '📣 Blade Ball Ads',
+        name: "📣 Blade Ball Ads",
         value: `${requirements.ads} clan advertisements in the official Blade Ball server`,
-        inline: false
-      }
-    ]
+        inline: false,
+      },
+    ],
   });
 }
 
@@ -439,7 +465,7 @@ async function findMemberFromQuery(guild, rawQuery) {
     const displayName = normalizeSearchText(member.displayName);
     const globalName = member.user.globalName
       ? normalizeSearchText(member.user.globalName)
-      : '';
+      : "";
 
     return (
       username === normalized ||
@@ -455,7 +481,7 @@ async function findMemberFromQuery(guild, rawQuery) {
     const displayName = normalizeSearchText(member.displayName);
     const globalName = member.user.globalName
       ? normalizeSearchText(member.user.globalName)
-      : '';
+      : "";
 
     return (
       username.includes(normalized) ||
@@ -475,13 +501,15 @@ async function getVisibleNonBotMembers(channel) {
   try {
     await channel.guild.members.fetch({ force: false });
   } catch (e) {
-    console.error('Member fetch error (rate limited?):', e.message);
+    console.error("Member fetch error (rate limited?):", e.message);
   }
 
   return channel.guild.members.cache.filter((member) => {
     if (member.user.bot) return false;
     try {
-      return channel.permissionsFor(member).has(PermissionFlagsBits.ViewChannel);
+      return channel
+        .permissionsFor(member)
+        .has(PermissionFlagsBits.ViewChannel);
     } catch {
       return false;
     }
@@ -492,25 +520,25 @@ async function sendAppCountEmbed(message, member) {
   const lifetimeCount = await getLifetimeTicketCount(member.id);
 
   const embed = buildBotEmbed({
-    title: '📨 Application Lookup',
+    title: "📨 Application Lookup",
     description: `✨ Application count for <@${member.id}>`,
     fields: [
       {
-        name: '👤 User',
+        name: "👤 User",
         value: `${member.user.tag}`,
-        inline: true
+        inline: true,
       },
       {
-        name: '🆔 Discord ID',
+        name: "🆔 Discord ID",
         value: member.id,
-        inline: true
+        inline: true,
       },
       {
-        name: '📦 Lifetime Applications',
+        name: "📦 Lifetime Applications",
         value: String(lifetimeCount),
-        inline: true
-      }
-    ]
+        inline: true,
+      },
+    ],
   });
 
   await message.reply({ embeds: [embed] });
@@ -521,193 +549,214 @@ function createSelectRow(customId, placeholder, options) {
     new StringSelectMenuBuilder()
       .setCustomId(customId)
       .setPlaceholder(placeholder)
-      .addOptions(options)
+      .addOptions(options),
   );
 }
 
 function createButtonRow(customId, label, style = ButtonStyle.Primary) {
   return new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(customId)
-      .setLabel(label)
-      .setStyle(style)
+    new ButtonBuilder().setCustomId(customId).setLabel(label).setStyle(style),
   );
 }
 
 async function sendUsernameQuestion(channel) {
   const embed = buildBotEmbed({
-    title: '📝 Question 1',
-    description: '🎮 Press the button below to enter your in-game username.'
+    title: "📝 Question 1",
+    description: "🎮 Press the button below to enter your in-game username.",
   });
 
-  const row = createButtonRow('intake_open_username_modal', 'Enter In-Game Username');
+  const row = createButtonRow(
+    "intake_open_username_modal",
+    "Enter In-Game Username",
+  );
 
   await channel.send({
     embeds: [embed],
-    components: [row]
+    components: [row],
   });
 }
 
 async function sendUsernameConfirmQuestion(channel, username) {
   const embed = buildBotEmbed({
-    title: '✅ Confirm Username',
-    description: `You entered **${username}**.\n\n❓ Is this your correct in-game username?`
+    title: "✅ Confirm Username",
+    description: `You entered **${username}**.\n\n❓ Is this your correct in-game username?`,
   });
 
-  const row = createSelectRow('intake_username_confirm_select', 'Choose yes or no', [
-    { label: 'Yes', value: 'yes' },
-    { label: 'No', value: 'no' }
-  ]);
+  const row = createSelectRow(
+    "intake_username_confirm_select",
+    "Choose yes or no",
+    [
+      { label: "Yes", value: "yes" },
+      { label: "No", value: "no" },
+    ],
+  );
 
   await channel.send({
     embeds: [embed],
-    components: [row]
+    components: [row],
   });
 }
 
 async function sendPlatformQuestion(channel, ticketType) {
   const embed = buildBotEmbed({
-    title: '🖥️ Question 2',
-    description: `🎮 Enter which platform you play on for this ${ticketType} ticket.`
+    title: "🖥️ Question 2",
+    description: `🎮 Enter which platform you play on for this ${ticketType} ticket.`,
   });
 
-  const row = createSelectRow('intake_platform_select', 'Choose a platform', [
-    { label: 'PC', value: 'pc' },
-    { label: 'Mobile', value: 'mobile' },
-    { label: 'Console', value: 'console' }
+  const row = createSelectRow("intake_platform_select", "Choose a platform", [
+    { label: "PC", value: "pc" },
+    { label: "Mobile", value: "mobile" },
+    { label: "Console", value: "console" },
   ]);
 
   await channel.send({
     embeds: [embed],
-    components: [row]
+    components: [row],
   });
 }
 
 async function sendActivityQuestion(channel) {
   const embed = buildBotEmbed({
-    title: '⏱️ Question 3',
-    description: '📊 Enter your estimated weekly activity.'
+    title: "⏱️ Question 3",
+    description: "📊 Enter your estimated weekly activity.",
   });
 
-  const row = createSelectRow('intake_activity_select', 'Choose your activity level', [
-    { label: '<1 hour', value: 'lt1' },
-    { label: '1–3 hours', value: 'h1_3' },
-    { label: '4–8 hours', value: 'h4_8' },
-    { label: '9–24 hours', value: 'h9_24' },
-    { label: '25+ hours', value: 'h25plus' }
-  ]);
+  const row = createSelectRow(
+    "intake_activity_select",
+    "Choose your activity level",
+    [
+      { label: "<1 hour", value: "lt1" },
+      { label: "1–3 hours", value: "h1_3" },
+      { label: "4–8 hours", value: "h4_8" },
+      { label: "9–24 hours", value: "h9_24" },
+      { label: "25+ hours", value: "h25plus" },
+    ],
+  );
 
   await channel.send({
     embeds: [embed],
-    components: [row]
+    components: [row],
   });
 }
 
 async function sendWinsKillsQuestion(channel) {
   const embed = buildBotEmbed({
-    title: '🏆 Question 4',
+    title: "🏆 Question 4",
     description:
-      '📈 Enter your wins and kills.\n\nPress the button below to open the form. Whole numbers only. Commas are okay.'
+      "📈 Enter your wins and kills.\n\nPress the button below to open the form. Whole numbers only. Commas are okay.",
   });
 
-  const row = createButtonRow('intake_open_winskills_modal', 'Enter Wins & Kills');
+  const row = createButtonRow(
+    "intake_open_winskills_modal",
+    "Enter Wins & Kills",
+  );
 
   await channel.send({
     embeds: [embed],
-    components: [row]
+    components: [row],
   });
 }
 
 async function sendAfkQuestion(channel) {
   const embed = buildBotEmbed({
-    title: '🌙 Question 5',
-    description: '👑 Can you AFK farm (crowns)?'
+    title: "🌙 Question 5",
+    description: "👑 Can you AFK farm (crowns)?",
   });
 
-  const row = createSelectRow('intake_afk_select', 'Choose yes or no', [
-    { label: 'Yes', value: 'yes' },
-    { label: 'No', value: 'no' }
+  const row = createSelectRow("intake_afk_select", "Choose yes or no", [
+    { label: "Yes", value: "yes" },
+    { label: "No", value: "no" },
   ]);
 
   await channel.send({
     embeds: [embed],
-    components: [row]
+    components: [row],
   });
 }
 
 async function sendPaidConfirmQuestion(channel) {
   const embed = buildBotEmbed({
-    title: '💰 Question 3',
+    title: "💰 Question 3",
     description:
-      'A 4Less Premium membership starts at 1000 Blade Ball tokens for your first month and will require additional recurring payments of the same amount after the first month, on the same day as the initial down payment. Confirm if this works for you or not.'
+      "A 4Less Premium membership starts at 1000 Blade Ball tokens for your first month and will require additional recurring payments of the same amount after the first month, on the same day as the initial down payment. Confirm if this works for you or not.",
   });
 
-  const row = createSelectRow('intake_paid_confirm_select', 'Choose yes or no', [
-    { label: 'Yes', value: 'yes' },
-    { label: 'No', value: 'no' }
-  ]);
+  const row = createSelectRow(
+    "intake_paid_confirm_select",
+    "Choose yes or no",
+    [
+      { label: "Yes", value: "yes" },
+      { label: "No", value: "no" },
+    ],
+  );
 
   await channel.send({
     embeds: [embed],
-    components: [row]
+    components: [row],
   });
 }
 
 async function sendHelpMenu(channel) {
   const embed = buildBotEmbed({
-    title: '🆘 Ticket Help',
-    description: '✨ Choose how you want to request assistance.'
+    title: "🆘 Ticket Help",
+    description: "✨ Choose how you want to request assistance.",
   });
 
-  const row = createSelectRow('ticket_help_select', 'Choose a help option', [
-    { label: 'Ping Staff Team', value: 'staff_team' },
-    { label: 'Ping Specific Staff', value: 'specific_staff' }
+  const row = createSelectRow("ticket_help_select", "Choose a help option", [
+    { label: "Ping Staff Team", value: "staff_team" },
+    { label: "Ping Specific Staff", value: "specific_staff" },
   ]);
 
   await channel.send({
     embeds: [embed],
-    components: [row]
+    components: [row],
   });
 }
 
 async function sendNextIntakePrompt(channel, session) {
-  if (session.step === 'standard_username' || session.step === 'paid_username') {
+  if (
+    session.step === "standard_username" ||
+    session.step === "paid_username"
+  ) {
     await sendUsernameQuestion(channel);
     return;
   }
 
-  if (session.step === 'standard_username_confirm' || session.step === 'paid_username_confirm') {
-    const pendingUsername = session.data?.pendingUsername || 'Unknown';
+  if (
+    session.step === "standard_username_confirm" ||
+    session.step === "paid_username_confirm"
+  ) {
+    const pendingUsername = session.data?.pendingUsername || "Unknown";
     await sendUsernameConfirmQuestion(channel, pendingUsername);
     return;
   }
 
-  if (session.step === 'standard_platform') {
-    await sendPlatformQuestion(channel, 'standard');
+  if (session.step === "standard_platform") {
+    await sendPlatformQuestion(channel, "standard");
     return;
   }
 
-  if (session.step === 'standard_activity') {
+  if (session.step === "standard_activity") {
     await sendActivityQuestion(channel);
     return;
   }
 
-  if (session.step === 'standard_winskills') {
+  if (session.step === "standard_winskills") {
     await sendWinsKillsQuestion(channel);
     return;
   }
 
-  if (session.step === 'standard_afk') {
+  if (session.step === "standard_afk") {
     await sendAfkQuestion(channel);
     return;
   }
 
-  if (session.step === 'paid_platform') {
-    await sendPlatformQuestion(channel, 'paid');
+  if (session.step === "paid_platform") {
+    await sendPlatformQuestion(channel, "paid");
     return;
   }
 
-  if (session.step === 'paid_confirm') {
+  if (session.step === "paid_confirm") {
     await sendPaidConfirmQuestion(channel);
   }
 }
@@ -717,71 +766,116 @@ async function handleStandardCompletion(channel, sessionData) {
   const passed = failures.length === 0;
 
   const embed = buildBotEmbed({
-    title: '📋 Standard Application Result',
+    title: "📋 Standard Application Result",
     description: passed
-      ? '✅ The applicant currently meets the automatic screening criteria.'
-      : '❌ The applicant does not meet the automatic screening criteria.',
+      ? "✅ The applicant currently meets the automatic screening criteria."
+      : "❌ The applicant does not meet the automatic screening criteria.",
     color: passed ? 0x57f287 : 0xed4245,
     fields: [
-      { name: '🎮 In-Game Username', value: sessionData.username || 'N/A', inline: true },
-      { name: '🖥️ Platform', value: formatPlatformLabel(sessionData.platform || 'N/A'), inline: true },
-      { name: '⏱️ Weekly Activity', value: formatActivityLabel(sessionData.activity || 'N/A'), inline: true },
-      { name: '🏆 Wins', value: String(sessionData.wins ?? 'N/A'), inline: true },
-      { name: '💀 Kills', value: String(sessionData.kills ?? 'N/A'), inline: true },
-      { name: '👑 AFK Farm', value: formatYesNo(sessionData.afkFarm || 'N/A'), inline: true },
       {
-        name: passed ? '✅ Criteria Check' : '❌ Failed Criteria',
-        value: passed ? 'Passed all automatic checks.' : failures.map((f) => `• ${f}`).join('\n'),
-        inline: false
-      }
-    ]
+        name: "🎮 In-Game Username",
+        value: sessionData.username || "N/A",
+        inline: true,
+      },
+      {
+        name: "🖥️ Platform",
+        value: formatPlatformLabel(sessionData.platform || "N/A"),
+        inline: true,
+      },
+      {
+        name: "⏱️ Weekly Activity",
+        value: formatActivityLabel(sessionData.activity || "N/A"),
+        inline: true,
+      },
+      {
+        name: "🏆 Wins",
+        value: String(sessionData.wins ?? "N/A"),
+        inline: true,
+      },
+      {
+        name: "💀 Kills",
+        value: String(sessionData.kills ?? "N/A"),
+        inline: true,
+      },
+      {
+        name: "👑 AFK Farm",
+        value: formatYesNo(sessionData.afkFarm || "N/A"),
+        inline: true,
+      },
+      {
+        name: passed ? "✅ Criteria Check" : "❌ Failed Criteria",
+        value: passed
+          ? "Passed all automatic checks."
+          : failures.map((f) => `• ${f}`).join("\n"),
+        inline: false,
+      },
+    ],
   });
 
   await channel.send({ embeds: [embed] });
 }
 
 async function handlePaidCompletion(channel, sessionData) {
-  if (sessionData.premiumAccepted === 'no') {
+  if (sessionData.premiumAccepted === "no") {
     const embed = buildBotEmbed({
-      title: '💸 Premium Eligibility Result',
-      description:
-        `❌ This applicant is **not eligible** for premium because they did not accept the premium payment terms.\n\n<@&${process.env.OWNER_ROLE_ID}> please review and close this ticket.`,
+      title: "💸 Premium Eligibility Result",
+      description: `❌ This applicant is **not eligible** for premium because they did not accept the premium payment terms.\n\n<@&${process.env.OWNER_ROLE_ID}> please review and close this ticket.`,
       color: 0xed4245,
       fields: [
-        { name: '🎮 In-Game Username', value: sessionData.username || 'N/A', inline: true },
-        { name: '🖥️ Platform', value: formatPlatformLabel(sessionData.platform || 'N/A'), inline: true },
-        { name: '💰 Accepted Premium Terms', value: 'No', inline: true }
-      ]
+        {
+          name: "🎮 In-Game Username",
+          value: sessionData.username || "N/A",
+          inline: true,
+        },
+        {
+          name: "🖥️ Platform",
+          value: formatPlatformLabel(sessionData.platform || "N/A"),
+          inline: true,
+        },
+        { name: "💰 Accepted Premium Terms", value: "No", inline: true },
+      ],
     });
 
     await channel.send({
       content: `<@&${process.env.OWNER_ROLE_ID}>`,
-      embeds: [embed]
+      embeds: [embed],
     });
     return;
   }
 
   const embed = buildBotEmbed({
-    title: '✅ Premium Payment Approval',
-    description:
-      `<@&${process.env.OWNER_ROLE_ID}> the applicant accepted the premium payment terms. Please continue with payment collection. From this point forward, this ticket is human-driven.`,
+    title: "✅ Premium Payment Approval",
+    description: `<@&${process.env.OWNER_ROLE_ID}> the applicant accepted the premium payment terms. Please continue with payment collection. From this point forward, this ticket is human-driven.`,
     color: 0x57f287,
     fields: [
-      { name: '🎮 In-Game Username', value: sessionData.username || 'N/A', inline: true },
-      { name: '🖥️ Platform', value: formatPlatformLabel(sessionData.platform || 'N/A'), inline: true },
-      { name: '💰 Accepted Premium Terms', value: 'Yes', inline: true }
-    ]
+      {
+        name: "🎮 In-Game Username",
+        value: sessionData.username || "N/A",
+        inline: true,
+      },
+      {
+        name: "🖥️ Platform",
+        value: formatPlatformLabel(sessionData.platform || "N/A"),
+        inline: true,
+      },
+      { name: "💰 Accepted Premium Terms", value: "Yes", inline: true },
+    ],
   });
 
   await channel.send({
     content: `<@&${process.env.OWNER_ROLE_ID}>`,
-    embeds: [embed]
+    embeds: [embed],
   });
 }
 
-async function generateTranscript(channel, ticketInfo, actorId = null, force = false) {
+async function generateTranscript(
+  channel,
+  ticketInfo,
+  actorId = null,
+  force = false,
+) {
   if (!ticketInfo) {
-    console.error('[TRANSCRIPT] No ticketInfo provided');
+    console.error("[TRANSCRIPT] No ticketInfo provided");
     return false;
   }
 
@@ -790,7 +884,10 @@ async function generateTranscript(channel, ticketInfo, actorId = null, force = f
   }
 
   try {
-    const paddedTicketNumber = String(ticketInfo.ticket_number).padStart(3, '0');
+    const paddedTicketNumber = String(ticketInfo.ticket_number).padStart(
+      3,
+      "0",
+    );
     const filename = `${ticketInfo.type}-ticket-${paddedTicketNumber}-transcript.html`;
 
     const attachment = await discordTranscripts.createTranscript(channel, {
@@ -798,16 +895,24 @@ async function generateTranscript(channel, ticketInfo, actorId = null, force = f
       filename,
       poweredBy: false,
       saveImages: true,
-      footerText: 'Exported {number} message{s}'
+      footerText: "Exported {number} message{s}",
     });
 
     const embed = buildBotEmbed({
-      title: '🧾 Ticket Transcript',
+      title: "🧾 Ticket Transcript",
       description: `✨ Transcript generated for **${formatTicketTypeLabel(ticketInfo.type)} Ticket #${paddedTicketNumber}**.`,
       fields: [
-        { name: '👤 Ticket Owner', value: `<@${ticketInfo.owner_id}>`, inline: true },
-        { name: '🛠️ Generated By', value: actorId ? `<@${actorId}>` : 'Manual', inline: true }
-      ]
+        {
+          name: "👤 Ticket Owner",
+          value: `<@${ticketInfo.owner_id}>`,
+          inline: true,
+        },
+        {
+          name: "🛠️ Generated By",
+          value: actorId ? `<@${actorId}>` : "Manual",
+          inline: true,
+        },
+      ],
     });
 
     const logChannelId = process.env.TRANSCRIPT_LOG_CHANNEL_ID;
@@ -818,31 +923,31 @@ async function generateTranscript(channel, ticketInfo, actorId = null, force = f
     if (logChannel && logChannel.isTextBased()) {
       await logChannel.send({
         embeds: [embed],
-        files: [attachment]
+        files: [attachment],
       });
     } else {
       await channel.send({
         embeds: [embed],
-        files: [attachment]
+        files: [attachment],
       });
     }
 
     await markTranscriptGenerated(channel.id);
     return true;
   } catch (error) {
-    console.error('[TRANSCRIPT ERROR]', error);
+    console.error("[TRANSCRIPT ERROR]", error);
     return false;
   }
 }
 
-client.on('messageCreate', async (message) => {
+client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   // ====================== COUNTING BOT ======================
   if (
-  message.channel.id === process.env.COUNTING_CHANNEL_ID &&
-  !message.content.startsWith(process.env.PREFIX)
-  ){
+    message.channel.id === process.env.COUNTING_CHANNEL_ID &&
+    !message.content.startsWith(process.env.PREFIX)
+  ) {
     const state = await getCountingState();
     const expected = state.current_number + 1;
 
@@ -854,7 +959,7 @@ client.on('messageCreate', async (message) => {
       if (/^\d+$/.test(input)) {
         number = parseInt(input, 10);
       } else {
-        const cleaned = input.replace(/[^0-9+\-*/^().\s]/gi, '').trim();
+        const cleaned = input.replace(/[^0-9+\-*/^().\s]/gi, "").trim();
         if (cleaned) {
           number = Math.floor(math.evaluate(cleaned));
         }
@@ -870,9 +975,9 @@ client.on('messageCreate', async (message) => {
       await incrementMistakes(message.author.id);
 
       const embed = buildBotEmbed({
-        title: '❌ Counting Streak Broken',
+        title: "❌ Counting Streak Broken",
         description: `<@${message.author.id}> messed up the count!\n\nExpected **${expected}** but said **${number}**.\nStreak ended at **${state.current_streak}**.\n\nThe count has been reset back to **1**.`,
-        color: 0xed4245
+        color: 0xed4245,
       });
 
       await message.reply({ embeds: [embed] });
@@ -885,14 +990,19 @@ client.on('messageCreate', async (message) => {
     const newStreak = state.current_streak + 1;
 
     // Prevent same user twice in a row (except first count)
-    if (state.last_user_id === message.author.id && state.current_number !== 0) {
+    if (
+      state.last_user_id === message.author.id &&
+      state.current_number !== 0
+    ) {
       await incrementMistakes(message.author.id);
       await message.reply({
-        embeds: [buildBotEmbed({
-          title: '❌ No Consecutive Counts',
-          description: `<@${message.author.id}> you cannot count twice in a row!`,
-          color: 0xed4245
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "❌ No Consecutive Counts",
+            description: `<@${message.author.id}> you cannot count twice in a row!`,
+            color: 0xed4245,
+          }),
+        ],
       });
       await updateCountingState(0, null, 0);
       return;
@@ -901,12 +1011,12 @@ client.on('messageCreate', async (message) => {
     await updateCountingState(number, message.author.id, newStreak);
 
     // React with green checkmark ✅ on every valid count
-    await message.react('✅').catch(() => {});
+    await message.react("✅").catch(() => {});
 
-    if (number === 100) await message.react('💯');
+    if (number === 100) await message.react("💯");
     if (number === 67) {
-      await message.react('6️⃣');
-      await message.react('7️⃣');
+      await message.react("6️⃣");
+      await message.react("7️⃣");
     }
 
     if (newStreak > 0) {
@@ -916,13 +1026,12 @@ client.on('messageCreate', async (message) => {
 
   const prefix = process.env.PREFIX;
 
-
-
-
-
   const pendingAppSelection = pendingAppSelections.get(message.channel.id);
 
-  if (pendingAppSelection && pendingAppSelection.ownerId === message.author.id) {
+  if (
+    pendingAppSelection &&
+    pendingAppSelection.ownerId === message.author.id
+  ) {
     try {
       if (!message.content.startsWith(prefix)) {
         clearPendingAppSelection(message.channel.id);
@@ -930,10 +1039,11 @@ client.on('messageCreate', async (message) => {
         return message.reply({
           embeds: [
             buildBotEmbed({
-              title: '📨 Application Lookup',
-              description: '❌ Invalid input. The pending selection has been canceled. Run `..app` again.'
-            })
-          ]
+              title: "📨 Application Lookup",
+              description:
+                "❌ Invalid input. The pending selection has been canceled. Run `..app` again.",
+            }),
+          ],
         });
       }
 
@@ -950,16 +1060,17 @@ client.on('messageCreate', async (message) => {
           return message.reply({
             embeds: [
               buildBotEmbed({
-                title: '📨 Application Lookup',
-                description: '❌ Invalid selection. The request has been canceled. Run `..app` again.'
-              })
-            ]
+                title: "📨 Application Lookup",
+                description:
+                  "❌ Invalid selection. The request has been canceled. Run `..app` again.",
+              }),
+            ],
           });
         }
 
         const member =
           message.guild.members.cache.get(selectedUserId) ||
-          await message.guild.members.fetch(selectedUserId).catch(() => null);
+          (await message.guild.members.fetch(selectedUserId).catch(() => null));
 
         clearPendingAppSelection(message.channel.id);
 
@@ -967,10 +1078,11 @@ client.on('messageCreate', async (message) => {
           return message.reply({
             embeds: [
               buildBotEmbed({
-                title: '📨 Application Lookup',
-                description: '❌ That suggested user could not be found anymore. Run `..app` again.'
-              })
-            ]
+                title: "📨 Application Lookup",
+                description:
+                  "❌ That suggested user could not be found anymore. Run `..app` again.",
+              }),
+            ],
           });
         }
 
@@ -980,62 +1092,69 @@ client.on('messageCreate', async (message) => {
 
       clearPendingAppSelection(message.channel.id);
     } catch (error) {
-      console.error('ERROR in pending app selection handler:', error);
+      console.error("ERROR in pending app selection handler:", error);
       clearPendingAppSelection(message.channel.id);
     }
   }
 
   const pendingHelpSelection = pendingHelpSelections.get(message.channel.id);
 
-  if (pendingHelpSelection && pendingHelpSelection.ownerId === message.author.id) {
+  if (
+    pendingHelpSelection &&
+    pendingHelpSelection.ownerId === message.author.id
+  ) {
     const ticketInfo = await getTicketByChannelId(message.channel.id);
 
-    if (!ticketInfo || ticketInfo.status !== 'open') {
+    if (!ticketInfo || ticketInfo.status !== "open") {
       clearPendingHelpSelection(message.channel.id);
     } else {
       if (message.content.startsWith(prefix)) {
         const tempContent = message.content.slice(prefix.length).trim();
         const tempCommand = tempContent.split(/ +/)[0]?.toLowerCase();
 
-        if (tempCommand === 'help') {
+        if (tempCommand === "help") {
           clearPendingHelpSelection(message.channel.id);
         } else {
           return message.reply({
             embeds: [
               buildBotEmbed({
-                title: '🆘 Ticket Help',
-                description: '❌ Enter a valid staff Discord ID or run `..help` again to choose a different help option.'
-              })
-            ]
+                title: "🆘 Ticket Help",
+                description:
+                  "❌ Enter a valid staff Discord ID or run `..help` again to choose a different help option.",
+              }),
+            ],
           });
         }
       } else {
         const raw = message.content.trim();
-        const targetId = extractMentionedUserId(raw) || (/^\d+$/.test(raw) ? raw : null);
+        const targetId =
+          extractMentionedUserId(raw) || (/^\d+$/.test(raw) ? raw : null);
 
         if (!targetId) {
           return message.reply({
             embeds: [
               buildBotEmbed({
-                title: '🆘 Ticket Help',
-                description: '❌ That is not a valid Discord ID. Enter a valid staff ID or run `..help` again to switch options.'
-              })
-            ]
+                title: "🆘 Ticket Help",
+                description:
+                  "❌ That is not a valid Discord ID. Enter a valid staff ID or run `..help` again to switch options.",
+              }),
+            ],
           });
         }
 
         const member =
           message.guild.members.cache.get(targetId) ||
-          await message.guild.members.fetch(targetId).catch(() => null);
+          (await message.guild.members.fetch(targetId).catch(() => null));
 
         if (!member || member.user.bot) {
           return message.reply({
             embeds: [
               buildBotEmbed({
-                title: '🆘 Ticket Help',
-                description: '❌ That user ID is invalid. Enter a valid staff ID or run `..help` again.'
-              })
-            ]
+                title: "🆘 Ticket Help",
+                description:
+                  "❌ That user ID is invalid. Enter a valid staff ID or run `..help` again.",
+              }),
+            ],
           });
         }
 
@@ -1047,10 +1166,11 @@ client.on('messageCreate', async (message) => {
           return message.reply({
             embeds: [
               buildBotEmbed({
-                title: '🆘 Ticket Help',
-                description: '❌ That user does not have access to this ticket. Enter a valid staff ID or run `..help` again.'
-              })
-            ]
+                title: "🆘 Ticket Help",
+                description:
+                  "❌ That user does not have access to this ticket. Enter a valid staff ID or run `..help` again.",
+              }),
+            ],
           });
         }
 
@@ -1060,10 +1180,10 @@ client.on('messageCreate', async (message) => {
           content: `<@${member.id}>`,
           embeds: [
             buildBotEmbed({
-              title: '🆘 Client Help Request',
-              description: `✨ <@${message.author.id}> needs assistance in this ticket.`
-            })
-          ]
+              title: "🆘 Client Help Request",
+              description: `✨ <@${message.author.id}> needs assistance in this ticket.`,
+            }),
+          ],
         });
 
         return;
@@ -1080,87 +1200,102 @@ client.on('messageCreate', async (message) => {
 
   const args = contentWithoutPrefix.split(/ +/);
   const command = args.shift()?.toLowerCase();
-  console.log('COMMAND DETECTED:', command);
+  console.log("COMMAND DETECTED:", command);
 
   // ====================== COUNTING COMMANDS (LB & HOF) ======================
-  if (command === 'leaderboard' || command === 'lb' || command === 'hof') {
+  if (command === "leaderboard" || command === "lb" || command === "hof") {
     if (message.channel.id !== process.env.COUNTING_CHANNEL_ID) {
       return; // silently ignore if not in counting channel
     }
 
     try {
-      if (command === 'leaderboard' || command === 'lb') {
+      if (command === "leaderboard" || command === "lb") {
         const top = await getTopStreaks(10);
 
         if (top.length === 0) {
           return message.reply({
-            embeds: [buildBotEmbed({
-              title: '🏆 Counting Leaderboard',
-              description: 'No high scores yet. Be the first to set a record!'
-            })]
+            embeds: [
+              buildBotEmbed({
+                title: "🏆 Counting Leaderboard",
+                description:
+                  "No high scores yet. Be the first to set a record!",
+              }),
+            ],
           });
         }
 
         const lines = top.map((entry, i) => {
-          const date = entry.highest_streak_date 
-            ? `<t:${Math.floor(new Date(entry.highest_streak_date).getTime()/1000)}:D>` 
-            : 'Unknown';
-          return `**#${i+1}** <@${entry.user_id}> — **${entry.highest_streak}** (${date})`;
+          const date = entry.highest_streak_date
+            ? `<t:${Math.floor(new Date(entry.highest_streak_date).getTime() / 1000)}:D>`
+            : "Unknown";
+          return `**#${i + 1}** <@${entry.user_id}> — **${entry.highest_streak}** (${date})`;
         });
 
         return message.reply({
-          embeds: [buildBotEmbed({
-            title: '🏆 Counting Leaderboard',
-            description: lines.join('\n')
-          })]
+          embeds: [
+            buildBotEmbed({
+              title: "🏆 Counting Leaderboard",
+              description: lines.join("\n"),
+            }),
+          ],
         });
       }
 
-      if (command === 'hof') {
+      if (command === "hof") {
         const top = await getTopMistakes(10);
 
         if (top.length === 0) {
           return message.reply({
-            embeds: [buildBotEmbed({
-              title: '💀 Hall of Shame',
-              description: 'No mistakes yet. Impressive!'
-            })]
+            embeds: [
+              buildBotEmbed({
+                title: "💀 Hall of Shame",
+                description: "No mistakes yet. Impressive!",
+              }),
+            ],
           });
         }
 
-        const lines = top.map((entry, i) => 
-          `**#${i+1}** <@${entry.user_id}> — **${entry.total_mistakes}** mistakes`
+        const lines = top.map(
+          (entry, i) =>
+            `**#${i + 1}** <@${entry.user_id}> — **${entry.total_mistakes}** mistakes`,
         );
 
         return message.reply({
-          embeds: [buildBotEmbed({
-            title: '💀 Hall of Shame',
-            description: lines.join('\n')
-          })]
+          embeds: [
+            buildBotEmbed({
+              title: "💀 Hall of Shame",
+              description: lines.join("\n"),
+            }),
+          ],
         });
       }
     } catch (error) {
-      console.error('[LB/HOF ERROR]', error);
+      console.error("[LB/HOF ERROR]", error);
       return message.reply({
-        embeds: [buildBotEmbed({
-          title: '❌ Error',
-          description: 'There was an error fetching the leaderboard. Check console.'
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "❌ Error",
+            description:
+              "There was an error fetching the leaderboard. Check console.",
+          }),
+        ],
       });
     }
   }
 
-    // ====================== LOL COMMAND ======================
-  if (command === 'lol') {
+  // ====================== LOL COMMAND ======================
+  if (command === "lol") {
     if (!message.reference) {
       return; // silent if not a reply
     }
 
     try {
-      const repliedMsg = await message.channel.messages.fetch(message.reference.messageId);
-      
-      const emojis = ['💀', '☠️', '😭', '😂', '🤣', '🥀'];
-      
+      const repliedMsg = await message.channel.messages.fetch(
+        message.reference.messageId,
+      );
+
+      const emojis = ["💀", "☠️", "😭", "😂", "🤣", "🥀"];
+
       // Shuffle emojis randomly
       const shuffled = emojis.sort(() => Math.random() - 0.5);
 
@@ -1171,119 +1306,131 @@ client.on('messageCreate', async (message) => {
 
       // Delete the user's ..lol command message
       await message.delete().catch(() => {});
-
     } catch (error) {
       // silently fail if something goes wrong (e.g. message deleted)
     }
     return;
   }
 
-
   // ====================== CLAIM OLD TICKET (OWNER ONLY) ======================
-  if (command === 'claim' || command === 'adopt') {
+  if (command === "claim" || command === "adopt") {
     if (message.author.id !== process.env.OWNER_USER_ID) {
       return message.reply({
-        embeds: [buildBotEmbed({
-          title: '🔗 Claim Ticket',
-          description: '❌ Only the bot owner can use this command.'
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "🔗 Claim Ticket",
+            description: "❌ Only the bot owner can use this command.",
+          }),
+        ],
       });
     }
 
     const existing = await getTicketByChannelId(message.channel.id);
     if (existing) {
       return message.reply({
-        embeds: [buildBotEmbed({ 
-          title: '🔗 Claim Ticket', 
-          description: '✅ This ticket is already in the system.' 
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "🔗 Claim Ticket",
+            description: "✅ This ticket is already in the system.",
+          }),
+        ],
       });
     }
 
     const channelName = message.channel.name.toLowerCase();
 
     // Safety check
-    if (!channelName.includes('ticket') && !channelName.includes('app') && !channelName.includes('paid')) {
+    if (
+      !channelName.includes("ticket") &&
+      !channelName.includes("app") &&
+      !channelName.includes("paid")
+    ) {
       return message.reply({
-        embeds: [buildBotEmbed({
-          title: '🔗 Claim Ticket',
-          description: '❌ This command can only be used on channels that look like tickets (must contain "ticket", "app", or "paid" in the name).',
-          color: 0xed4245
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "🔗 Claim Ticket",
+            description:
+              '❌ This command can only be used on channels that look like tickets (must contain "ticket", "app", or "paid" in the name).',
+            color: 0xed4245,
+          }),
+        ],
       });
     }
 
-    const isPaid = channelName.includes('paid') || channelName.includes('premium');
+    const isPaid =
+      channelName.includes("paid") || channelName.includes("premium");
     const numberMatch = channelName.match(/(\d+)/);
     const ticketNumber = numberMatch ? parseInt(numberMatch[0]) : 999;
 
     await createTicket({
       channelId: message.channel.id,
-      ownerId: 'unknown',           // You can manually edit this in database later if needed
-      type: isPaid ? 'paid' : 'standard',
-      ticketNumber: ticketNumber
+      ownerId: "unknown", // You can manually edit this in database later if needed
+      type: isPaid ? "paid" : "standard",
+      ticketNumber: ticketNumber,
     });
 
     await message.reply({
-      embeds: [buildBotEmbed({
-        title: '✅ Ticket Claimed',
-        description: `This channel has been added as a **${isPaid ? 'Paid' : 'Standard'}** ticket (#${ticketNumber}).`,
-        color: 0x57f287
-      })]
+      embeds: [
+        buildBotEmbed({
+          title: "✅ Ticket Claimed",
+          description: `This channel has been added as a **${isPaid ? "Paid" : "Standard"}** ticket (#${ticketNumber}).`,
+          color: 0x57f287,
+        }),
+      ],
     });
 
     return;
   }
 
-  if (command === 'ping') {
-    return message.reply('pong');
+  if (command === "ping") {
+    return message.reply("pong");
   }
 
-    if (command === 'panel') {
-      const embed = buildBotEmbed({
-        title: '📋 4Less Applications',
-        description: `**Please read** <#1410747125943505040> **first** before applying.\n\nChoose your application type below:`,
-        color: 0x5865f2
-      });
+  if (command === "panel") {
+    const embed = buildBotEmbed({
+      title: "📋 4Less Applications",
+      description: `**Please read** <#1410747125943505040> **first** before applying.\n\nChoose your application type below:`,
+      color: 0x5865f2,
+    });
 
-      const row = new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId('ticket_type_select')
-          .setPlaceholder('Select Application Type')
-          .addOptions([
-            {
-              label: 'Standard Application',
-              value: 'standard',
-              description: 'Regular membership application',
-              emoji: '📝'
-            },
-            {
-              label: 'Paid Application',
-              value: 'paid',
-              description: 'Priority / Paid application',
-              emoji: '💎'
-            }
-          ])
-      );
+    const row = new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId("ticket_type_select")
+        .setPlaceholder("Select Application Type")
+        .addOptions([
+          {
+            label: "Standard Application",
+            value: "standard",
+            description: "Regular membership application",
+            emoji: "📝",
+          },
+          {
+            label: "Paid Application",
+            value: "paid",
+            description: "Priority / Paid application",
+            emoji: "💎",
+          },
+        ]),
+    );
 
-      await message.channel.send({ embeds: [embed], components: [row] });
-      await message.delete().catch(() => {});
-      return;
-    }
+    await message.channel.send({ embeds: [embed], components: [row] });
+    await message.delete().catch(() => {});
+    return;
+  }
 
-  if (command === 'app') {
+  if (command === "app") {
     if (!hasStaffAccess(message.member)) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '📨 Application Lookup',
-            description: '❌ Only staff can use this command.'
-          })
-        ]
+            title: "📨 Application Lookup",
+            description: "❌ Only staff can use this command.",
+          }),
+        ],
       });
     }
 
-    const queryText = args.join(' ').trim();
+    const queryText = args.join(" ").trim();
 
     if (queryText) {
       const member = await findMemberFromQuery(message.guild, queryText);
@@ -1292,10 +1439,11 @@ client.on('messageCreate', async (message) => {
         return message.reply({
           embeds: [
             buildBotEmbed({
-              title: '📨 Application Lookup',
-              description: '❌ No matching user was found. Try a mention, exact username, display name, or user ID.'
-            })
-          ]
+              title: "📨 Application Lookup",
+              description:
+                "❌ No matching user was found. Try a mention, exact username, display name, or user ID.",
+            }),
+          ],
         });
       }
 
@@ -1309,10 +1457,11 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '📨 Application Lookup',
-            description: '❌ There are no visible non-bot users in this channel to scan.'
-          })
-        ]
+            title: "📨 Application Lookup",
+            description:
+              "❌ There are no visible non-bot users in this channel to scan.",
+          }),
+        ],
       });
     }
 
@@ -1320,21 +1469,22 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '📨 Application Lookup',
-            description: '⚠️ This channel has too many visible users to scan broadly. Use `..app <user id>`, `..app <username>`, or mention the user instead.'
-          })
-        ]
+            title: "📨 Application Lookup",
+            description:
+              "⚠️ This channel has too many visible users to scan broadly. Use `..app <user id>`, `..app <username>`, or mention the user instead.",
+          }),
+        ],
       });
     }
 
     const sortedMembers = [...visibleMembers.values()].sort((a, b) =>
-      a.displayName.localeCompare(b.displayName)
+      a.displayName.localeCompare(b.displayName),
     );
 
     setPendingAppSelection(
       message.channel.id,
       message.author.id,
-      sortedMembers.map((member) => member.id)
+      sortedMembers.map((member) => member.id),
     );
 
     const lines = sortedMembers.map((member, index) => {
@@ -1342,31 +1492,31 @@ client.on('messageCreate', async (message) => {
     });
 
     const embed = buildBotEmbed({
-      title: '📨 Application Lookup',
-      description: `✨ Pick one of these users with \`..number\` (you have 5 seconds).\n\n${lines.join('\n')}`
+      title: "📨 Application Lookup",
+      description: `✨ Pick one of these users with \`..number\` (you have 5 seconds).\n\n${lines.join("\n")}`,
     });
 
     await message.reply({ embeds: [embed] });
     return;
   }
 
-  if (command === 'req') {
+  if (command === "req") {
     const requirements = await getRequirements();
 
     return message.reply({
-      embeds: [buildRequirementsEmbed(requirements)]
+      embeds: [buildRequirementsEmbed(requirements)],
     });
   }
 
-  if (command === 'reqedit') {
+  if (command === "reqedit") {
     if (!hasStaffAccess(message.member)) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🛠️ Requirement Edit',
-            description: '❌ Only staff can edit requirements.'
-          })
-        ]
+            title: "🛠️ Requirement Edit",
+            description: "❌ Only staff can edit requirements.",
+          }),
+        ],
       });
     }
 
@@ -1374,10 +1524,10 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🛠️ Requirement Edit',
-            description: '⚠️ Usage: `..reqedit 1000 700 500 null 4`'
-          })
-        ]
+            title: "🛠️ Requirement Edit",
+            description: "⚠️ Usage: `..reqedit 1000 700 500 null 4`",
+          }),
+        ],
       });
     }
 
@@ -1397,28 +1547,30 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🛠️ Requirement Edit',
-            description: '❌ Standard, booster, staff, and ads values must all be whole numbers.'
-          })
-        ]
+            title: "🛠️ Requirement Edit",
+            description:
+              "❌ Standard, booster, staff, and ads values must all be whole numbers.",
+          }),
+        ],
       });
     }
 
-    const normalizedAp = String(apRaw).toLowerCase() === 'null'
-      ? 'null'
-      : (() => {
-          const parsed = parseIntegerInput(apRaw);
-          return parsed === null ? null : String(parsed);
-        })();
+    const normalizedAp =
+      String(apRaw).toLowerCase() === "null"
+        ? "null"
+        : (() => {
+            const parsed = parseIntegerInput(apRaw);
+            return parsed === null ? null : String(parsed);
+          })();
 
     if (normalizedAp === null) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🛠️ Requirement Edit',
-            description: '❌ AP must be either a whole number or `null`.'
-          })
-        ]
+            title: "🛠️ Requirement Edit",
+            description: "❌ AP must be either a whole number or `null`.",
+          }),
+        ],
       });
     }
 
@@ -1427,7 +1579,7 @@ client.on('messageCreate', async (message) => {
       boosterCrowns,
       staffCrowns,
       ap: normalizedAp,
-      ads
+      ads,
     });
 
     const updated = await getRequirements();
@@ -1435,23 +1587,24 @@ client.on('messageCreate', async (message) => {
     return message.reply({
       embeds: [
         buildBotEmbed({
-          title: '✅ Requirements Updated',
-          description: '✨ The clan requirements have been updated successfully.',
-          fields: buildRequirementsEmbed(updated).data.fields
-        })
-      ]
+          title: "✅ Requirements Updated",
+          description:
+            "✨ The clan requirements have been updated successfully.",
+          fields: buildRequirementsEmbed(updated).data.fields,
+        }),
+      ],
     });
   }
 
-  if (command === 'tcount') {
+  if (command === "tcount") {
     if (!hasStaffAccess(message.member)) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🎫 Ticket Counter',
-            description: '❌ Only staff can use this command.'
-          })
-        ]
+            title: "🎫 Ticket Counter",
+            description: "❌ Only staff can use this command.",
+          }),
+        ],
       });
     }
 
@@ -1461,10 +1614,10 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🎫 Ticket Counter',
-            description: '⚠️ Usage: `..tcount s` or `..tcount p`'
-          })
-        ]
+            title: "🎫 Ticket Counter",
+            description: "⚠️ Usage: `..tcount s` or `..tcount p`",
+          }),
+        ],
       });
     }
 
@@ -1473,37 +1626,37 @@ client.on('messageCreate', async (message) => {
     return message.reply({
       embeds: [
         buildBotEmbed({
-          title: '🎫 Ticket Counter',
-          description: `✨ Current highest internal ${formatTicketTypeLabel(ticketType)} ticket number: **${currentValue}**`
-        })
-      ]
+          title: "🎫 Ticket Counter",
+          description: `✨ Current highest internal ${formatTicketTypeLabel(ticketType)} ticket number: **${currentValue}**`,
+        }),
+      ],
     });
   }
 
-  if (command === 'tset') {
+  if (command === "tset") {
     if (!hasStaffAccess(message.member)) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🎫 Ticket Counter',
-            description: '❌ Only staff can use this command.'
-          })
-        ]
+            title: "🎫 Ticket Counter",
+            description: "❌ Only staff can use this command.",
+          }),
+        ],
       });
     }
 
     const ticketType = parseTicketTypeFlag(args[0]);
     const rawValue = args[1];
-    const parsedValue = parseIntegerInput(rawValue || '');
+    const parsedValue = parseIntegerInput(rawValue || "");
 
     if (!ticketType || parsedValue === null) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🎫 Ticket Counter',
-            description: '⚠️ Usage: `..tset s 40` or `..tset p 30`'
-          })
-        ]
+            title: "🎫 Ticket Counter",
+            description: "⚠️ Usage: `..tset s 40` or `..tset p 30`",
+          }),
+        ],
       });
     }
 
@@ -1511,10 +1664,11 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🎫 Ticket Counter',
-            description: '❌ The ticket counter must be a whole number between 0 and 10000.'
-          })
-        ]
+            title: "🎫 Ticket Counter",
+            description:
+              "❌ The ticket counter must be a whole number between 0 and 10000.",
+          }),
+        ],
       });
     }
 
@@ -1523,22 +1677,22 @@ client.on('messageCreate', async (message) => {
     return message.reply({
       embeds: [
         buildBotEmbed({
-          title: '✅ Ticket Counter Updated',
-          description: `✨ ${formatTicketTypeLabel(ticketType)} ticket counter set to **${parsedValue}**.`
-        })
-      ]
+          title: "✅ Ticket Counter Updated",
+          description: `✨ ${formatTicketTypeLabel(ticketType)} ticket counter set to **${parsedValue}**.`,
+        }),
+      ],
     });
   }
 
-  if (command === 'treset') {
+  if (command === "treset") {
     if (!hasStaffAccess(message.member)) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🎫 Ticket Counter',
-            description: '❌ Only staff can use this command.'
-          })
-        ]
+            title: "🎫 Ticket Counter",
+            description: "❌ Only staff can use this command.",
+          }),
+        ],
       });
     }
 
@@ -1548,10 +1702,10 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🎫 Ticket Counter',
-            description: '⚠️ Usage: `..treset s` or `..treset p`'
-          })
-        ]
+            title: "🎫 Ticket Counter",
+            description: "⚠️ Usage: `..treset s` or `..treset p`",
+          }),
+        ],
       });
     }
 
@@ -1560,22 +1714,22 @@ client.on('messageCreate', async (message) => {
     return message.reply({
       embeds: [
         buildBotEmbed({
-          title: '♻️ Ticket Counter Reset',
-          description: `✨ ${formatTicketTypeLabel(ticketType)} ticket counter reset to **0**.`
-        })
-      ]
+          title: "♻️ Ticket Counter Reset",
+          description: `✨ ${formatTicketTypeLabel(ticketType)} ticket counter reset to **0**.`,
+        }),
+      ],
     });
   }
 
-  if (command === 'purge') {
+  if (command === "purge") {
     if (!hasStaffAccess(message.member)) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🧹 Purge',
-            description: '❌ Only staff can use this command.'
-          })
-        ]
+            title: "🧹 Purge",
+            description: "❌ Only staff can use this command.",
+          }),
+        ],
       });
     }
 
@@ -1584,23 +1738,24 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🧹 Purge',
-            description: '❌ This command cannot be used inside tracked ticket channels.'
-          })
-        ]
+            title: "🧹 Purge",
+            description:
+              "❌ This command cannot be used inside tracked ticket channels.",
+          }),
+        ],
       });
     }
 
-    const amount = parseIntegerInput(args[0] || '');
+    const amount = parseIntegerInput(args[0] || "");
 
     if (amount === null || amount < 1 || amount > 100) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🧹 Purge',
-            description: '⚠️ Usage: `..purge 1-100`'
-          })
-        ]
+            title: "🧹 Purge",
+            description: "⚠️ Usage: `..purge 1-100`",
+          }),
+        ],
       });
     }
 
@@ -1610,10 +1765,10 @@ client.on('messageCreate', async (message) => {
       const confirm = await message.channel.send({
         embeds: [
           buildBotEmbed({
-            title: '✅ Purge Complete',
-            description: `✨ Deleted up to **${amount}** recent messages.`
-          })
-        ]
+            title: "✅ Purge Complete",
+            description: `✨ Deleted up to **${amount}** recent messages.`,
+          }),
+        ],
       });
 
       setTimeout(() => {
@@ -1624,25 +1779,26 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🧹 Purge',
-            description: '❌ There was an error purging messages. Discord cannot bulk delete messages older than 14 days.'
-          })
-        ]
+            title: "🧹 Purge",
+            description:
+              "❌ There was an error purging messages. Discord cannot bulk delete messages older than 14 days.",
+          }),
+        ],
       });
     }
 
     return;
   }
 
-    if (command === 'kick') {
+  if (command === "kick") {
     if (!hasOwnerAccess(message.member)) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '👢 Kick',
-            description: '❌ Only the owner role can use this command.'
-          })
-        ]
+            title: "👢 Kick",
+            description: "❌ Only the owner role can use this command.",
+          }),
+        ],
       });
     }
 
@@ -1651,10 +1807,10 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '👢 Kick',
-            description: '⚠️ Usage: `..kick @user` or `..kick userId`'
-          })
-        ]
+            title: "👢 Kick",
+            description: "⚠️ Usage: `..kick @user` or `..kick userId`",
+          }),
+        ],
       });
     }
 
@@ -1664,10 +1820,10 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '👢 Kick',
-            description: '❌ Could not find that user.'
-          })
-        ]
+            title: "👢 Kick",
+            description: "❌ Could not find that user.",
+          }),
+        ],
       });
     }
 
@@ -1675,10 +1831,10 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '👢 Kick',
-            description: '❌ You cannot kick yourself.'
-          })
-        ]
+            title: "👢 Kick",
+            description: "❌ You cannot kick yourself.",
+          }),
+        ],
       });
     }
 
@@ -1686,10 +1842,11 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '👢 Kick',
-            description: '❌ I cannot kick that user. Check role hierarchy and permissions.'
-          })
-        ]
+            title: "👢 Kick",
+            description:
+              "❌ I cannot kick that user. Check role hierarchy and permissions.",
+          }),
+        ],
       });
     }
 
@@ -1699,33 +1856,33 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '✅ User Kicked',
-            description: `👢 Successfully kicked <@${member.id}>.`
-          })
-        ]
+            title: "✅ User Kicked",
+            description: `👢 Successfully kicked <@${member.id}>.`,
+          }),
+        ],
       });
     } catch (error) {
       console.error(error);
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '👢 Kick',
-            description: '❌ There was an error trying to kick that user.'
-          })
-        ]
+            title: "👢 Kick",
+            description: "❌ There was an error trying to kick that user.",
+          }),
+        ],
       });
     }
   }
 
-    if (command === 'ban') {
+  if (command === "ban") {
     if (!hasOwnerAccess(message.member)) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🔨 Ban',
-            description: '❌ Only the owner role can use this command.'
-          })
-        ]
+            title: "🔨 Ban",
+            description: "❌ Only the owner role can use this command.",
+          }),
+        ],
       });
     }
 
@@ -1734,10 +1891,10 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🔨 Ban',
-            description: '⚠️ Usage: `..ban @user` or `..ban userId`'
-          })
-        ]
+            title: "🔨 Ban",
+            description: "⚠️ Usage: `..ban @user` or `..ban userId`",
+          }),
+        ],
       });
     }
 
@@ -1747,10 +1904,10 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🔨 Ban',
-            description: '❌ Could not find that user.'
-          })
-        ]
+            title: "🔨 Ban",
+            description: "❌ Could not find that user.",
+          }),
+        ],
       });
     }
 
@@ -1758,10 +1915,10 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🔨 Ban',
-            description: '❌ You cannot ban yourself.'
-          })
-        ]
+            title: "🔨 Ban",
+            description: "❌ You cannot ban yourself.",
+          }),
+        ],
       });
     }
 
@@ -1769,10 +1926,11 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🔨 Ban',
-            description: '❌ I cannot ban that user. Check role hierarchy and permissions.'
-          })
-        ]
+            title: "🔨 Ban",
+            description:
+              "❌ I cannot ban that user. Check role hierarchy and permissions.",
+          }),
+        ],
       });
     }
 
@@ -1782,33 +1940,33 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '✅ User Banned',
-            description: `🔨 Successfully banned <@${member.id}>.`
-          })
-        ]
+            title: "✅ User Banned",
+            description: `🔨 Successfully banned <@${member.id}>.`,
+          }),
+        ],
       });
     } catch (error) {
       console.error(error);
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🔨 Ban',
-            description: '❌ There was an error trying to ban that user.'
-          })
-        ]
+            title: "🔨 Ban",
+            description: "❌ There was an error trying to ban that user.",
+          }),
+        ],
       });
     }
   }
 
-    if (command === 'mute') {
+  if (command === "mute") {
     if (!hasStaffAccess(message.member)) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🔇 Mute',
-            description: '❌ Only staff or owners can use this command.'
-          })
-        ]
+            title: "🔇 Mute",
+            description: "❌ Only staff or owners can use this command.",
+          }),
+        ],
       });
     }
 
@@ -1819,10 +1977,11 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🔇 Mute',
-            description: '⚠️ Usage: `..mute @user 3s`, `..mute @user 3m`, `..mute @user 3h`, or `..mute @user 3d`'
-          })
-        ]
+            title: "🔇 Mute",
+            description:
+              "⚠️ Usage: `..mute @user 3s`, `..mute @user 3m`, `..mute @user 3h`, or `..mute @user 3d`",
+          }),
+        ],
       });
     }
 
@@ -1832,10 +1991,10 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🔇 Mute',
-            description: '❌ Could not find that user.'
-          })
-        ]
+            title: "🔇 Mute",
+            description: "❌ Could not find that user.",
+          }),
+        ],
       });
     }
 
@@ -1843,10 +2002,10 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🔇 Mute',
-            description: '❌ You cannot mute yourself.'
-          })
-        ]
+            title: "🔇 Mute",
+            description: "❌ You cannot mute yourself.",
+          }),
+        ],
       });
     }
 
@@ -1856,10 +2015,11 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🔇 Mute',
-            description: '❌ Invalid duration. Use `s`, `m`, `h`, or `d`, and keep it at or under 28 days.'
-          })
-        ]
+            title: "🔇 Mute",
+            description:
+              "❌ Invalid duration. Use `s`, `m`, `h`, or `d`, and keep it at or under 28 days.",
+          }),
+        ],
       });
     }
 
@@ -1867,10 +2027,11 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🔇 Mute',
-            description: '❌ I cannot mute that user. Check role hierarchy and permissions.'
-          })
-        ]
+            title: "🔇 Mute",
+            description:
+              "❌ I cannot mute that user. Check role hierarchy and permissions.",
+          }),
+        ],
       });
     }
 
@@ -1880,288 +2041,351 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '✅ User Muted',
-            description: `🔇 Successfully muted <@${member.id}> for **${duration.value}${duration.unit}**.`
-          })
-        ]
+            title: "✅ User Muted",
+            description: `🔇 Successfully muted <@${member.id}> for **${duration.value}${duration.unit}**.`,
+          }),
+        ],
       });
     } catch (error) {
       console.error(error);
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🔇 Mute',
-            description: '❌ There was an error trying to mute that user.'
-          })
-        ]
+            title: "🔇 Mute",
+            description: "❌ There was an error trying to mute that user.",
+          }),
+        ],
       });
     }
   }
 
-      // ====================== UNMUTE ======================
-    if (command === 'unmute') {
-      if (!hasStaffAccess(message.member)) {
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '🔇 Unmute',
-            description: '❌ Only staff or owners can use this command.'
-          })]
-        });
-      }
+  // ====================== UNMUTE ======================
+  if (command === "unmute") {
+    if (!hasStaffAccess(message.member)) {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "🔇 Unmute",
+            description: "❌ Only staff or owners can use this command.",
+          }),
+        ],
+      });
+    }
 
-      const targetInput = args[0];
-      if (!targetInput) {
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '🔇 Unmute',
-            description: '⚠️ Usage: `..unmute @user` or `..unmute userId`'
-          })]
-        });
-      }
+    const targetInput = args[0];
+    if (!targetInput) {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "🔇 Unmute",
+            description: "⚠️ Usage: `..unmute @user` or `..unmute userId`",
+          }),
+        ],
+      });
+    }
 
-      const member = await resolveGuildMember(message.guild, targetInput);
+    const member = await resolveGuildMember(message.guild, targetInput);
 
-      if (!member) {
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '🔇 Unmute',
-            description: '❌ Could not find that user.'
-          })]
-        });
-      }
+    if (!member) {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "🔇 Unmute",
+            description: "❌ Could not find that user.",
+          }),
+        ],
+      });
+    }
 
-      if (!member.moderatable) {
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '🔇 Unmute',
-            description: '❌ I cannot unmute that user. Check role hierarchy and bot permissions.'
-          })]
-        });
-      }
+    if (!member.moderatable) {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "🔇 Unmute",
+            description:
+              "❌ I cannot unmute that user. Check role hierarchy and bot permissions.",
+          }),
+        ],
+      });
+    }
 
-      try {
-        await member.timeout(null, `Unmuted by ${message.author.tag}`);
+    try {
+      await member.timeout(null, `Unmuted by ${message.author.tag}`);
 
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '✅ User Unmuted',
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "✅ User Unmuted",
             description: `🔇 Successfully removed timeout from <@${member.id}>.`,
-            color: 0x57f287
-          })]
-        });
-      } catch (error) {
-        console.error(error);
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '🔇 Unmute',
-            description: '❌ There was an error trying to unmute that user.'
-          })]
-        });
-      }
+            color: 0x57f287,
+          }),
+        ],
+      });
+    } catch (error) {
+      console.error(error);
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "🔇 Unmute",
+            description: "❌ There was an error trying to unmute that user.",
+          }),
+        ],
+      });
+    }
+  }
+
+  // ====================== UNBAN ======================
+  if (command === "unban") {
+    if (!hasOwnerAccess(message.member)) {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "🔨 Unban",
+            description: "❌ Only the owner role can use this command.",
+          }),
+        ],
+      });
     }
 
-    // ====================== UNBAN ======================
-    if (command === 'unban') {
-      if (!hasOwnerAccess(message.member)) {
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '🔨 Unban',
-            description: '❌ Only the owner role can use this command.'
-          })]
-        });
-      }
+    const targetInput = args[0];
+    if (!targetInput) {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "🔨 Unban",
+            description:
+              "⚠️ Usage: `..unban userId` (you must use the Discord ID)",
+          }),
+        ],
+      });
+    }
 
-      const targetInput = args[0];
-      if (!targetInput) {
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '🔨 Unban',
-            description: '⚠️ Usage: `..unban userId` (you must use the Discord ID)'
-          })]
-        });
-      }
+    const userId =
+      extractMentionedUserId(targetInput) ||
+      (/^\d+$/.test(targetInput) ? targetInput : null);
 
-      const userId = extractMentionedUserId(targetInput) || (/^\d+$/.test(targetInput) ? targetInput : null);
+    if (!userId) {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "🔨 Unban",
+            description: "❌ Please provide a valid Discord user ID.",
+          }),
+        ],
+      });
+    }
 
-      if (!userId) {
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '🔨 Unban',
-            description: '❌ Please provide a valid Discord user ID.'
-          })]
-        });
-      }
+    try {
+      await message.guild.members.unban(
+        userId,
+        `Unbanned by ${message.author.tag}`,
+      );
 
-      try {
-        await message.guild.members.unban(userId, `Unbanned by ${message.author.tag}`);
-
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '✅ User Unbanned',
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "✅ User Unbanned",
             description: `🔨 Successfully unbanned user with ID \`${userId}\`.`,
-            color: 0x57f287
-          })]
-        });
-      } catch (error) {
-        console.error(error);
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '🔨 Unban',
-            description: '❌ Failed to unban. The user may not be banned or I lack permissions.'
-          })]
-        });
-      }
+            color: 0x57f287,
+          }),
+        ],
+      });
+    } catch (error) {
+      console.error(error);
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "🔨 Unban",
+            description:
+              "❌ Failed to unban. The user may not be banned or I lack permissions.",
+          }),
+        ],
+      });
+    }
+  }
+
+  // ====================== ID ======================
+  if (command === "id") {
+    let target;
+
+    if (message.reference) {
+      // Replied to a message
+      const repliedMsg = await message.channel.messages
+        .fetch(message.reference.messageId)
+        .catch(() => null);
+      if (repliedMsg) target = repliedMsg.author;
+    } else if (args[0]) {
+      target = await resolveUser(message.guild, args[0]);
     }
 
-    // ====================== ID ======================
-    if (command === 'id') {
-      let target;
-
-      if (message.reference) {
-        // Replied to a message
-        const repliedMsg = await message.channel.messages.fetch(message.reference.messageId).catch(() => null);
-        if (repliedMsg) target = repliedMsg.author;
-      } else if (args[0]) {
-        target = await resolveUser(message.guild, args[0]);
-      }
-
-      if (!target || target.bot) {
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '🆔 User ID',
-            description: '❌ Please reply to a user\'s message or provide a valid user/ID.'
-          })]
-        });
-      }
-
-      await message.reply(`\`${target.id}\``);
-      return;
+    if (!target || target.bot) {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "🆔 User ID",
+            description:
+              "❌ Please reply to a user's message or provide a valid user/ID.",
+          }),
+        ],
+      });
     }
 
-    // ====================== PFP ======================
-    if (command === 'pfp') {
-      let target;
+    await message.reply(`\`${target.id}\``);
+    return;
+  }
 
-      if (message.reference) {
-        const repliedMsg = await message.channel.messages.fetch(message.reference.messageId).catch(() => null);
-        if (repliedMsg) target = repliedMsg.author;
-      } else if (args[0]) {
-        target = await resolveUser(message.guild, args[0]);
-      }
+  // ====================== PFP ======================
+  if (command === "pfp") {
+    let target;
 
-      if (!target || target.bot) {
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '🖼️ Profile Picture',
-            description: '❌ Please reply to a user\'s message or provide a valid @user or ID.'
-          })]
-        });
-      }
-
-      const embed = buildBotEmbed({
-        title: `${target.tag}'s Profile Picture`,
-        description: `🖼️ [Direct Link](${target.displayAvatarURL({ size: 4096 })})`,
-      }).setImage(target.displayAvatarURL({ size: 512 }));
-
-      await message.reply({ embeds: [embed] });
-      return;
+    if (message.reference) {
+      const repliedMsg = await message.channel.messages
+        .fetch(message.reference.messageId)
+        .catch(() => null);
+      if (repliedMsg) target = repliedMsg.author;
+    } else if (args[0]) {
+      target = await resolveUser(message.guild, args[0]);
     }
 
-    // ====================== RTD (Roll the Die) ======================
-    if (command === 'rtd') {
-      const roll = Math.floor(Math.random() * 6) + 1;
-      await message.reply({
-        embeds: [buildBotEmbed({
-          title: '🎲 Roll the Die',
+    if (!target || target.bot) {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "🖼️ Profile Picture",
+            description:
+              "❌ Please reply to a user's message or provide a valid @user or ID.",
+          }),
+        ],
+      });
+    }
+
+    const embed = buildBotEmbed({
+      title: `${target.tag}'s Profile Picture`,
+      description: `🖼️ [Direct Link](${target.displayAvatarURL({ size: 4096 })})`,
+    }).setImage(target.displayAvatarURL({ size: 512 }));
+
+    await message.reply({ embeds: [embed] });
+    return;
+  }
+
+  // ====================== RTD (Roll the Die) ======================
+  if (command === "rtd") {
+    const roll = Math.floor(Math.random() * 6) + 1;
+    await message.reply({
+      embeds: [
+        buildBotEmbed({
+          title: "🎲 Roll the Die",
           description: `You rolled a **${roll}**!`,
-          color: 0x57f287
-        })]
-      });
-      return;
-    }
+          color: 0x57f287,
+        }),
+      ],
+    });
+    return;
+  }
 
-    if (command === 'rtd2') {
-      const roll1 = Math.floor(Math.random() * 6) + 1;
-      const roll2 = Math.floor(Math.random() * 6) + 1;
-      await message.reply({
-        embeds: [buildBotEmbed({
-          title: '🎲 Roll Two Dice',
+  if (command === "rtd2") {
+    const roll1 = Math.floor(Math.random() * 6) + 1;
+    const roll2 = Math.floor(Math.random() * 6) + 1;
+    await message.reply({
+      embeds: [
+        buildBotEmbed({
+          title: "🎲 Roll Two Dice",
           description: `You rolled a **${roll1}** and a **${roll2}**!`,
-          color: 0x57f287
-        })]
-      });
-      return;
+          color: 0x57f287,
+        }),
+      ],
+    });
+    return;
+  }
+
+  // ====================== COIN FLIP ======================
+  if (command === "cf") {
+    const rand = Math.random() * 100;
+
+    let result, description, color;
+
+    if (rand < 48) {
+      result = "Heads";
+      description = "🪙 The coin landed on **Heads**!";
+      color = 0x57f287;
+    } else if (rand < 96) {
+      result = "Tails";
+      description = "🪙 The coin landed on **Tails**!";
+      color = 0x57f287;
+    } else {
+      result = "Edge";
+      description =
+        "🪙 The coin landed on its **edge**!\n\nYou need to reroll!";
+      color = 0xf1c40f;
     }
 
-    // ====================== COIN FLIP ======================
-    if (command === 'cf') {
-      const rand = Math.random() * 100;
-
-      let result, description, color;
-
-      if (rand < 48) {
-        result = 'Heads';
-        description = '🪙 The coin landed on **Heads**!';
-        color = 0x57f287;
-      } else if (rand < 96) {
-        result = 'Tails';
-        description = '🪙 The coin landed on **Tails**!';
-        color = 0x57f287;
-      } else {
-        result = 'Edge';
-        description = '🪙 The coin landed on its **edge**!\n\nYou need to reroll!';
-        color = 0xf1c40f;
-      }
-
-      await message.reply({
-        embeds: [buildBotEmbed({
-          title: '🪙 Coin Flip',
+    await message.reply({
+      embeds: [
+        buildBotEmbed({
+          title: "🪙 Coin Flip",
           description,
-          color
-        })]
-      });
-      return;
-    }
+          color,
+        }),
+      ],
+    });
+    return;
+  }
 
-      if (command === 'q') {
+  if (command === "q") {
     const ticketInfo = await getTicketByChannelId(message.channel.id);
 
     if (!ticketInfo) {
       return message.reply({
-        embeds: [buildBotEmbed({
-          title: '📌 Queue',
-          description: '❌ This command can only be used inside tracked ticket channels.'
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "📌 Queue",
+            description:
+              "❌ This command can only be used inside tracked ticket channels.",
+          }),
+        ],
       });
     }
 
     if (!hasStaffAccess(message.member)) {
       return message.reply({
-        embeds: [buildBotEmbed({
-          title: '📌 Queue',
-          description: '❌ Only staff can manage the queue.'
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "📌 Queue",
+            description: "❌ Only staff can manage the queue.",
+          }),
+        ],
       });
     }
 
-    if (ticketInfo.status !== 'open') {
+    if (ticketInfo.status !== "open") {
       return message.reply({
-        embeds: [buildBotEmbed({
-          title: '📌 Queue',
-          description: '❌ Only open tickets can be added to or removed from queue.'
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "📌 Queue",
+            description:
+              "❌ Only open tickets can be added to or removed from queue.",
+          }),
+        ],
       });
     }
 
     // Check cooldown before any rename
     if (!canRenameChannel(message.channel.id)) {
-      const remaining = Math.ceil((channelRenameCooldowns.get(message.channel.id) + 10*60*1000 - Date.now()) / 1000 / 60);
+      const remaining = Math.ceil(
+        (channelRenameCooldowns.get(message.channel.id) +
+          10 * 60 * 1000 -
+          Date.now()) /
+          1000 /
+          60,
+      );
       return message.reply({
-        embeds: [buildBotEmbed({
-          title: '⏳ Rename Cooldown',
-          description: `❌ You can only rename this channel **twice every 10 minutes**.\n\nPlease wait **${remaining} minute${remaining > 1 ? 's' : ''}** before using \`..q\` again.`,
-          color: 0xed4245
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "⏳ Rename Cooldown",
+            description: `❌ You can only rename this channel **twice every 10 minutes**.\n\nPlease wait **${remaining} minute${remaining > 1 ? "s" : ""}** before using \`..q\` again.`,
+            color: 0xed4245,
+          }),
+        ],
       });
     }
 
@@ -2174,11 +2398,13 @@ client.on('messageCreate', async (message) => {
       setChannelRenameCooldown(message.channel.id); // Start cooldown
 
       return message.reply({
-        embeds: [buildBotEmbed({
-          title: '📌 Queue Updated',
-          description: '➖ This ticket was removed from the queue.',
-          color: 0xed4245
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "📌 Queue Updated",
+            description: "➖ This ticket was removed from the queue.",
+            color: 0xed4245,
+          }),
+        ],
       });
     }
 
@@ -2191,22 +2417,26 @@ client.on('messageCreate', async (message) => {
     setChannelRenameCooldown(message.channel.id); // Start cooldown
 
     return message.reply({
-      embeds: [buildBotEmbed({
-        title: '📌 Queue Updated',
-        description: `✅ This ticket was added to the queue at position **q${updatedTicket.queue_position}**.`,
-        color: 0x57f287
-      })]
+      embeds: [
+        buildBotEmbed({
+          title: "📌 Queue Updated",
+          description: `✅ This ticket was added to the queue at position **q${updatedTicket.queue_position}**.`,
+          color: 0x57f287,
+        }),
+      ],
     });
   }
 
-    // ====================== SILENT QUEUE (..sq) - OWNER ONLY ======================
-  if (command === 'sq') {
+  // ====================== SILENT QUEUE (..sq) - OWNER ONLY ======================
+  if (command === "sq") {
     if (message.author.id !== process.env.OWNER_USER_ID) {
       return message.reply({
-        embeds: [buildBotEmbed({
-          title: '📌 Silent Queue',
-          description: '❌ Only the bot owner can use this command.'
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "📌 Silent Queue",
+            description: "❌ Only the bot owner can use this command.",
+          }),
+        ],
       });
     }
 
@@ -2214,28 +2444,35 @@ client.on('messageCreate', async (message) => {
 
     if (!ticketInfo) {
       return message.reply({
-        embeds: [buildBotEmbed({
-          title: '📌 Silent Queue',
-          description: '❌ This command can only be used inside tracked ticket channels.'
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "📌 Silent Queue",
+            description:
+              "❌ This command can only be used inside tracked ticket channels.",
+          }),
+        ],
       });
     }
 
-    if (ticketInfo.status !== 'open') {
+    if (ticketInfo.status !== "open") {
       return message.reply({
-        embeds: [buildBotEmbed({
-          title: '📌 Silent Queue',
-          description: '❌ Only open tickets can be queued.'
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "📌 Silent Queue",
+            description: "❌ Only open tickets can be queued.",
+          }),
+        ],
       });
     }
 
     if (ticketInfo.is_queued) {
       return message.reply({
-        embeds: [buildBotEmbed({
-          title: '📌 Silent Queue',
-          description: '✅ This ticket is already in the queue.'
-        })]
+        embeds: [
+          buildBotEmbed({
+            title: "📌 Silent Queue",
+            description: "✅ This ticket is already in the queue.",
+          }),
+        ],
       });
     }
 
@@ -2246,123 +2483,142 @@ client.on('messageCreate', async (message) => {
     const updatedTicket = await getTicketByChannelId(message.channel.id);
 
     await message.reply({
-      embeds: [buildBotEmbed({
-        title: '📌 Silent Queue',
-        description: `✅ Ticket has been added to the queue at position **q${updatedTicket.queue_position}**.\n\nChannel name was **not** changed.`,
-        color: 0x57f287
-      })]
+      embeds: [
+        buildBotEmbed({
+          title: "📌 Silent Queue",
+          description: `✅ Ticket has been added to the queue at position **q${updatedTicket.queue_position}**.\n\nChannel name was **not** changed.`,
+          color: 0x57f287,
+        }),
+      ],
     });
 
     return;
   }
 
-      // ====================== INACTIVITY WARNING (! ) ======================
-    if (command === '!') {
-      const ticketInfo = await getTicketByChannelId(message.channel.id);
+  // ====================== INACTIVITY WARNING (! ) ======================
+  if (command === "!") {
+    const ticketInfo = await getTicketByChannelId(message.channel.id);
 
-      if (!ticketInfo) {
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '⚠️ Inactivity Warning',
-            description: '❌ This command can only be used inside tracked ticket channels.'
-          })]
-        });
-      }
-
-      if (ticketInfo.status !== 'open') {
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '⚠️ Inactivity Warning',
-            description: '❌ This command can only be used in **open** tickets.'
-          })]
-        });
-      }
-
-      if (!hasStaffAccess(message.member)) {
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '⚠️ Inactivity Warning',
-            description: '❌ Only staff or owners can use this command.'
-          })]
-        });
-      }
-
-      let targetUser;
-      let hours = 4; // default
-
-      // Check if replied to a message
-      if (message.reference) {
-        const repliedMsg = await message.channel.messages.fetch(message.reference.messageId).catch(() => null);
-        if (repliedMsg && !repliedMsg.author.bot) {
-          targetUser = repliedMsg.author;
-        }
-      }
-
-      // If not replied, parse arguments: ..! user 6
-      if (!targetUser) {
-        const targetInput = args[0];
-        const hoursInput = parseIntegerInput(args[1] || '4');
-
-        if (!targetInput) {
-          return message.reply({
-            embeds: [buildBotEmbed({
-              title: '⚠️ Inactivity Warning',
-              description: '⚠️ Usage: `..! @user 4` or reply to their message and type `..!`'
-            })]
-          });
-        }
-
-        targetUser = await resolveUser(message.guild, targetInput);
-
-        if (hoursInput !== null) {
-          hours = Math.min(Math.max(hoursInput, 1), 48);
-        }
-      }
-
-      if (!targetUser || targetUser.bot) {
-        return message.reply({
-          embeds: [buildBotEmbed({
-            title: '⚠️ Inactivity Warning',
-            description: '❌ Could not find a valid non-bot user.'
-          })]
-        });
-      }
-
-      // Delete the staff command message for cleanliness
-      await message.delete().catch(() => {});
-
-      const now = Math.floor(Date.now() / 1000);
-      const deadline = now + (hours * 3600);
-
-      const embed = buildBotEmbed({
-        title: '⚠️ Inactivity Warning',
-        description: `Hey <@${targetUser.id}>, we noticed you haven't responded yet.\n\n` +
-                     `Please reply to the questions in this ticket within the next **${hours} hours**.\n` +
-                     `You have until: <t:${deadline}:F> (<t:${deadline}:R>)`,
-        color: 0xf1c40f // orange warning
-      }).addFields({
-        name: '📌 What to do',
-        value: 'Answer the intake questions or let us know if you need more time.',
-        inline: false
+    if (!ticketInfo) {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "⚠️ Inactivity Warning",
+            description:
+              "❌ This command can only be used inside tracked ticket channels.",
+          }),
+        ],
       });
-
-      await message.channel.send({
-        content: `<@${targetUser.id}>`,
-        embeds: [embed]
-      });
-
-      return;
     }
 
-  if (command === 'qrefresh') {
+    if (ticketInfo.status !== "open") {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "⚠️ Inactivity Warning",
+            description:
+              "❌ This command can only be used in **open** tickets.",
+          }),
+        ],
+      });
+    }
+
     if (!hasStaffAccess(message.member)) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '📌 Queue',
-            description: '❌ Only staff can refresh the queue.'
-          })
-        ]
+            title: "⚠️ Inactivity Warning",
+            description: "❌ Only staff or owners can use this command.",
+          }),
+        ],
+      });
+    }
+
+    let targetUser;
+    let hours = 4; // default
+
+    // Check if replied to a message
+    if (message.reference) {
+      const repliedMsg = await message.channel.messages
+        .fetch(message.reference.messageId)
+        .catch(() => null);
+      if (repliedMsg && !repliedMsg.author.bot) {
+        targetUser = repliedMsg.author;
+      }
+    }
+
+    // If not replied, parse arguments: ..! user 6
+    if (!targetUser) {
+      const targetInput = args[0];
+      const hoursInput = parseIntegerInput(args[1] || "4");
+
+      if (!targetInput) {
+        return message.reply({
+          embeds: [
+            buildBotEmbed({
+              title: "⚠️ Inactivity Warning",
+              description:
+                "⚠️ Usage: `..! @user 4` or reply to their message and type `..!`",
+            }),
+          ],
+        });
+      }
+
+      targetUser = await resolveUser(message.guild, targetInput);
+
+      if (hoursInput !== null) {
+        hours = Math.min(Math.max(hoursInput, 1), 48);
+      }
+    }
+
+    if (!targetUser || targetUser.bot) {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "⚠️ Inactivity Warning",
+            description: "❌ Could not find a valid non-bot user.",
+          }),
+        ],
+      });
+    }
+
+    // Delete the staff command message for cleanliness
+    await message.delete().catch(() => {});
+
+    const now = Math.floor(Date.now() / 1000);
+    const deadline = now + hours * 3600;
+
+    const embed = buildBotEmbed({
+      title: "⚠️ Inactivity Warning",
+      description:
+        `Hey <@${targetUser.id}>, we noticed you haven't responded yet.\n\n` +
+        `Please reply to the questions in this ticket within the next **${hours} hours**.\n` +
+        `You have until: <t:${deadline}:F> (<t:${deadline}:R>)`,
+      color: 0xf1c40f, // orange warning
+    }).addFields({
+      name: "📌 What to do",
+      value:
+        "Answer the intake questions or let us know if you need more time.",
+      inline: false,
+    });
+
+    await message.channel.send({
+      content: `<@${targetUser.id}>`,
+      embeds: [embed],
+    });
+
+    return;
+  }
+
+  if (command === "qrefresh") {
+    if (!hasStaffAccess(message.member)) {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "📌 Queue",
+            description: "❌ Only staff can refresh the queue.",
+          }),
+        ],
       });
     }
 
@@ -2371,22 +2627,23 @@ client.on('messageCreate', async (message) => {
     return message.reply({
       embeds: [
         buildBotEmbed({
-          title: '🔄 Queue Refreshed',
-          description: '✨ Queue positions and channel names have been rebuilt.'
-        })
-      ]
+          title: "🔄 Queue Refreshed",
+          description:
+            "✨ Queue positions and channel names have been rebuilt.",
+        }),
+      ],
     });
   }
 
-  if (command === 'qlist') {
+  if (command === "qlist") {
     if (!hasStaffAccess(message.member)) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '📋 Queue List',
-            description: '❌ Only staff can view the queue list.'
-          })
-        ]
+            title: "📋 Queue List",
+            description: "❌ Only staff can view the queue list.",
+          }),
+        ],
       });
     }
 
@@ -2396,39 +2653,40 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '📋 Queue List',
-            description: '✨ There are currently no tickets in queue.'
-          })
-        ]
+            title: "📋 Queue List",
+            description: "✨ There are currently no tickets in queue.",
+          }),
+        ],
       });
     }
 
     const lines = queuedTickets.map((ticket) => {
-      const position = ticket.queue_position ?? '?';
-      return `• **q${position}** — <#${ticket.channel_id}> — \`ticket-${String(ticket.ticket_number).padStart(3, '0')}\``;
+      const position = ticket.queue_position ?? "?";
+      return `• **q${position}** — <#${ticket.channel_id}> — \`ticket-${String(ticket.ticket_number).padStart(3, "0")}\``;
     });
 
     return message.reply({
       embeds: [
         buildBotEmbed({
-          title: '📋 Queue List',
-          description: lines.join('\n')
-        })
-      ]
+          title: "📋 Queue List",
+          description: lines.join("\n"),
+        }),
+      ],
     });
   }
 
-  if (command === 'transcript' || command === 't') {
+  if (command === "transcript" || command === "t") {
     const ticketInfo = await getTicketByChannelId(message.channel.id);
 
     if (!ticketInfo) {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🧾 Transcript',
-            description: '❌ This command can only be used inside tracked ticket channels.'
-          })
-        ]
+            title: "🧾 Transcript",
+            description:
+              "❌ This command can only be used inside tracked ticket channels.",
+          }),
+        ],
       });
     }
 
@@ -2436,62 +2694,71 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🧾 Transcript',
-            description: '❌ Only staff can generate transcripts.'
-          })
-        ]
+            title: "🧾 Transcript",
+            description: "❌ Only staff can generate transcripts.",
+          }),
+        ],
       });
     }
 
-    if (ticketInfo.status !== 'closed') {
+    if (ticketInfo.status !== "closed") {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🧾 Transcript',
-            description: '⚠️ Transcripts can only be generated after the ticket has been closed.'
-          })
-        ]
+            title: "🧾 Transcript",
+            description:
+              "⚠️ Transcripts can only be generated after the ticket has been closed.",
+          }),
+        ],
       });
     }
 
-    const success = await generateTranscript(message.channel, ticketInfo, message.author.id, true);
+    const success = await generateTranscript(
+      message.channel,
+      ticketInfo,
+      message.author.id,
+      true,
+    );
 
     if (success) {
       await message.reply({
         embeds: [
           buildBotEmbed({
-            title: '✅ Transcript Generated',
-            description: '✨ Transcript has been generated and sent successfully.',
-            color: 0x57f287
-          })
-        ]
+            title: "✅ Transcript Generated",
+            description:
+              "✨ Transcript has been generated and sent successfully.",
+            color: 0x57f287,
+          }),
+        ],
       });
     } else {
       await message.reply({
         embeds: [
           buildBotEmbed({
-            title: '❌ Transcript Failed',
-            description: 'There was an error generating the transcript. Check the console for details.',
-            color: 0xed4245
-          })
-        ]
+            title: "❌ Transcript Failed",
+            description:
+              "There was an error generating the transcript. Check the console for details.",
+            color: 0xed4245,
+          }),
+        ],
       });
     }
 
     return;
   }
 
-  if (command === 'help') {
+  if (command === "help") {
     const ticketInfo = await getTicketByChannelId(message.channel.id);
 
-    if (!ticketInfo || ticketInfo.status !== 'open') {
+    if (!ticketInfo || ticketInfo.status !== "open") {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🆘 Ticket Help',
-            description: '❌ This command can only be used by the ticket owner inside an open ticket.'
-          })
-        ]
+            title: "🆘 Ticket Help",
+            description:
+              "❌ This command can only be used by the ticket owner inside an open ticket.",
+          }),
+        ],
       });
     }
 
@@ -2499,10 +2766,10 @@ client.on('messageCreate', async (message) => {
       return message.reply({
         embeds: [
           buildBotEmbed({
-            title: '🆘 Ticket Help',
-            description: '❌ Only the ticket owner can use this command.'
-          })
-        ]
+            title: "🆘 Ticket Help",
+            description: "❌ Only the ticket owner can use this command.",
+          }),
+        ],
       });
     }
 
@@ -2511,31 +2778,33 @@ client.on('messageCreate', async (message) => {
     return;
   }
 
-  if (command === 'close' || command === 'c') {
+  if (command === "close" || command === "c") {
     const ticketInfo = await getTicketByChannelId(message.channel.id);
 
     if (!ticketInfo) {
-      return message.reply('This command can only be used inside a tracked ticket channel.');
+      return message.reply(
+        "This command can only be used inside a tracked ticket channel.",
+      );
     }
 
     if (!hasStaffAccess(message.member)) {
-      return message.reply('Only staff can close tickets.');
+      return message.reply("Only staff can close tickets.");
     }
 
-    if (ticketInfo.status === 'closed') {
-      return message.reply('This ticket is already closed.');
+    if (ticketInfo.status === "closed") {
+      return message.reply("This ticket is already closed.");
     }
 
-    if (ticketInfo.status === 'deleted') {
-      return message.reply('This ticket is already marked as deleted.');
+    if (ticketInfo.status === "deleted") {
+      return message.reply("This ticket is already marked as deleted.");
     }
 
     const closedCategoryId =
-      ticketInfo.type === 'standard'
+      ticketInfo.type === "standard"
         ? process.env.CLOSED_STANDARD_CATEGORY_ID
         : process.env.CLOSED_PAID_CATEGORY_ID;
 
-    const closedName = `closed-ticket-${String(ticketInfo.ticket_number).padStart(3, '0')}`;
+    const closedName = `closed-ticket-${String(ticketInfo.ticket_number).padStart(3, "0")}`;
 
     try {
       if (ticketInfo.is_queued) {
@@ -2549,7 +2818,7 @@ client.on('messageCreate', async (message) => {
       await message.channel.permissionOverwrites.edit(ticketInfo.owner_id, {
         ViewChannel: false,
         SendMessages: false,
-        ReadMessageHistory: false
+        ReadMessageHistory: false,
       });
 
       await message.channel.setName(closedName);
@@ -2560,60 +2829,70 @@ client.on('messageCreate', async (message) => {
       await refreshQueueNames(message.guild);
     } catch (error) {
       console.error(error);
-      return message.reply('There was an error while closing the ticket.');
+      return message.reply("There was an error while closing the ticket.");
     }
 
     return;
   }
 
-  if (command === 'rename' || command === 'r') {
+  if (command === "rename" || command === "r") {
     const ticketInfo = await getTicketByChannelId(message.channel.id);
 
     if (!ticketInfo) {
-      return message.reply('This command can only be used inside a tracked ticket channel.');
+      return message.reply(
+        "This command can only be used inside a tracked ticket channel.",
+      );
     }
 
     if (!hasStaffAccess(message.member)) {
-      return message.reply('Only staff can rename tickets.');
+      return message.reply("Only staff can rename tickets.");
     }
 
-    const newName = args.join('-').toLowerCase().replace(/[^a-z0-9-]/g, '');
+    const newName = args
+      .join("-")
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "");
 
     if (!newName) {
-      return message.reply('Usage: `..rename new-name-here`');
+      return message.reply("Usage: `..rename new-name-here`");
     }
 
     try {
       await message.channel.setName(newName);
-      await message.channel.send(`Channel renamed to \`${newName}\` by <@${message.author.id}>.`);
+      await message.channel.send(
+        `Channel renamed to \`${newName}\` by <@${message.author.id}>.`,
+      );
     } catch (error) {
       console.error(error);
-      return message.reply('There was an error renaming this ticket.');
+      return message.reply("There was an error renaming this ticket.");
     }
 
     return;
   }
 
-  if (command === 'delete' || command === 'd' || command === 'del') {
+  if (command === "delete" || command === "d" || command === "del") {
     const ticketInfo = await getTicketByChannelId(message.channel.id);
 
     if (!ticketInfo) {
-      return message.reply('This command can only be used inside a tracked ticket channel.');
+      return message.reply(
+        "This command can only be used inside a tracked ticket channel.",
+      );
     }
 
     if (!hasStaffAccess(message.member)) {
-      return message.reply('Only staff can delete tickets.');
+      return message.reply("Only staff can delete tickets.");
     }
 
-    if (ticketInfo.status === 'closed' && !ticketInfo.transcript_generated) {
-        return message.reply({
-            embeds: [
-                buildBotEmbed({
-                    title: '🧾 Transcript Required',
-                    description: '⚠️ This closed ticket does not have a transcript yet. Run `..transcript` or `..t` before deleting it.'
-                })
-            ]
-        });
+    if (ticketInfo.status === "closed" && !ticketInfo.transcript_generated) {
+      return message.reply({
+        embeds: [
+          buildBotEmbed({
+            title: "🧾 Transcript Required",
+            description:
+              "⚠️ This closed ticket does not have a transcript yet. Run `..transcript` or `..t` before deleting it.",
+          }),
+        ],
+      });
     }
 
     await stopIntakeSession(message.channel.id);
@@ -2624,7 +2903,7 @@ client.on('messageCreate', async (message) => {
       await refreshQueueNames(message.guild);
     }
 
-    await message.channel.send('This ticket will be deleted in 5 seconds.');
+    await message.channel.send("This ticket will be deleted in 5 seconds.");
 
     setTimeout(async () => {
       try {
@@ -2639,400 +2918,33 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-client.on('interactionCreate', async (interaction) => {
+client.on("interactionCreate", async (interaction) => {
   if (interaction.isStringSelectMenu()) {
-        if (interaction.customId === 'ticket_type_select') {
+    if (interaction.customId === "ticket_type_select") {
       const selectedType = interaction.values[0];
 
       await interaction.deferUpdate();
 
       // Auto-create the ticket immediately after selection
-      const existingOpenTicket = await getOpenTicketByOwnerId(interaction.user.id);
+      const existingOpenTicket = await getOpenTicketByOwnerId(
+        interaction.user.id,
+      );
 
       if (existingOpenTicket) {
         return interaction.followUp({
           content: `You already have an open ticket: <#${existingOpenTicket.channel_id}>`,
-          ephemeral: true
+          ephemeral: true,
         });
-      }
-
-      const categoryId = selectedType === 'standard'
-        ? process.env.STANDARD_CATEGORY_ID
-        : process.env.PAID_CATEGORY_ID;
-
-      try {
-        const ticketNumber = await getNextTicketNumber(selectedType);
-        const paddedTicketNumber = String(ticketNumber).padStart(3, '0');
-        const channelName = `ticket-${paddedTicketNumber}`;
-
-        const ticketChannel = await interaction.guild.channels.create({
-          name: channelName,
-          type: ChannelType.GuildText,
-          parent: categoryId,
-          permissionOverwrites: [
-            { id: interaction.guild.id, deny: [PermissionFlagsBits.ViewChannel] },
-            {
-              id: interaction.user.id,
-              allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
-            },
-            {
-              id: process.env.STAFF_ROLE_ID,
-              allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageChannels]
-            },
-            {
-              id: process.env.OWNER_ROLE_ID,
-              allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageChannels]
-            },
-            {
-              id: client.user.id,
-              allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageChannels]
-            }
-          ]
-        });
-
-        const typeLabel = selectedType === 'standard' ? 'Standard Application' : 'Paid Application';
-
-        const welcomeEmbed = buildBotEmbed({
-          title: `🎟️ ${typeLabel} Ticket`,
-          description: `Welcome <@${interaction.user.id}>.\n\n✨ Please complete the automated intake questions below. Use \`..help\` at any time if you need staff assistance.`,
-          color: 0x57f287
-        });
-
-        await ticketChannel.send({
-          content: `<@${interaction.user.id}> <@&${process.env.STAFF_ROLE_ID}>`,
-          embeds: [welcomeEmbed]
-        });
-
-        await createTicket({
-          channelId: ticketChannel.id,
-          ownerId: interaction.user.id,
-          type: selectedType,
-          ticketNumber
-        });
-
-        await incrementLifetimeTicketCount(interaction.user.id);
-
-        const initialStep = selectedType === 'standard' ? 'standard_username' : 'paid_username';
-
-        await createIntakeSession({
-          channelId: ticketChannel.id,
-          ownerId: interaction.user.id,
-          ticketType: selectedType,
-          step: initialStep
-        });
-
-        await sendNextIntakePrompt(ticketChannel, {
-          channel_id: ticketChannel.id,
-          owner_id: interaction.user.id,
-          ticket_type: selectedType,
-          step: initialStep,
-          status: 'active',
-          data: {}
-        });
-
-        await interaction.followUp({
-          content: `✅ Your ${typeLabel.toLowerCase()} has been created: ${ticketChannel}`,
-          ephemeral: true
-        });
-
-      } catch (error) {
-        console.error('Ticket creation error:', error);
-        await interaction.followUp({
-          content: '❌ There was an error creating your ticket.',
-          ephemeral: true
-        });
-      }
-
-      return;
-    }
-
-    if (interaction.customId === 'ticket_help_select') {
-      const ticketInfo = await getTicketByChannelId(interaction.channel.id);
-
-      if (!ticketInfo || ticketInfo.status !== 'open') {
-        return interaction.reply({
-          content: 'This help menu can only be used in an open ticket.',
-          ephemeral: true
-        });
-      }
-
-      if (interaction.user.id !== ticketInfo.owner_id) {
-        return interaction.reply({
-          content: 'Only the ticket owner can use this help menu.',
-          ephemeral: true
-        });
-      }
-
-      const helpChoice = interaction.values[0];
-      await interaction.deferUpdate();
-
-      if (helpChoice === 'staff_team') {
-        clearPendingHelpSelection(interaction.channel.id);
-
-        await interaction.channel.send({
-          content: `<@&${process.env.STAFF_ROLE_ID}>`,
-          embeds: [
-            buildBotEmbed({
-              title: '🆘 Client Help Request',
-              description: `✨ <@${interaction.user.id}> needs assistance in this ticket.`
-            })
-          ]
-        });
-
-        return;
-      }
-
-      if (helpChoice === 'specific_staff') {
-        setPendingHelpSelection(interaction.channel.id, interaction.user.id);
-
-        await interaction.channel.send({
-          embeds: [
-            buildBotEmbed({
-              title: '🆘 Specific Staff Request',
-              description:
-                'Paste the Discord ID of the specific staff member you want to ping. They must have access to this ticket. If you want to switch back, run `..help` again.'
-            })
-          ]
-        });
-
-        return;
-      }
-    }
-
-    const session = await getIntakeSession(interaction.channel.id);
-
-    if (!session || session.status !== 'active') {
-      return interaction.reply({
-        content: 'This intake prompt is no longer active.',
-        ephemeral: true
-      });
-    }
-
-    if (interaction.user.id !== session.owner_id) {
-      return interaction.reply({
-        content: 'Only the ticket owner can answer this intake prompt.',
-        ephemeral: true
-      });
-    }
-
-    if (interaction.customId === 'intake_username_confirm_select') {
-      if (
-        session.step !== 'standard_username_confirm' &&
-        session.step !== 'paid_username_confirm'
-      ) {
-        return interaction.reply({
-          content: 'This username confirmation prompt is no longer active.',
-          ephemeral: true
-        });
-      }
-
-      const answer = interaction.values[0];
-      const pendingUsername = session.data?.pendingUsername || '';
-      const currentData = session.data || {};
-
-      await interaction.deferUpdate();
-
-      if (answer === 'no') {
-        const newData = { ...currentData };
-        delete newData.pendingUsername;
-
-        const resetStep =
-          session.step === 'standard_username_confirm'
-            ? 'standard_username'
-            : 'paid_username';
-
-        await updateIntakeSession(interaction.channel.id, {
-          step: resetStep,
-          data: newData
-        });
-
-        await sendNextIntakePrompt(interaction.channel, {
-          ...session,
-          step: resetStep,
-          data: newData
-        });
-        return;
-      }
-
-      const newData = {
-        ...currentData,
-        username: pendingUsername
-      };
-      delete newData.pendingUsername;
-
-      const nextStep =
-        session.step === 'standard_username_confirm'
-          ? 'standard_platform'
-          : 'paid_platform';
-
-      await updateIntakeSession(interaction.channel.id, {
-        step: nextStep,
-        data: newData
-      });
-
-      await sendNextIntakePrompt(interaction.channel, {
-        ...session,
-        step: nextStep,
-        data: newData
-      });
-      return;
-    }
-
-    if (interaction.customId === 'intake_platform_select') {
-      if (session.step !== 'standard_platform' && session.step !== 'paid_platform') {
-        return interaction.reply({
-          content: 'This platform prompt is no longer active.',
-          ephemeral: true
-        });
-      }
-
-      const platform = interaction.values[0];
-      const data = {
-        ...(session.data || {}),
-        platform
-      };
-
-      await interaction.deferUpdate();
-
-      if (session.step === 'standard_platform') {
-        await updateIntakeSession(interaction.channel.id, {
-          step: 'standard_activity',
-          data
-        });
-
-        await sendNextIntakePrompt(interaction.channel, {
-          ...session,
-          step: 'standard_activity',
-          data
-        });
-        return;
-      }
-
-      await updateIntakeSession(interaction.channel.id, {
-        step: 'paid_confirm',
-        data
-      });
-
-      await sendNextIntakePrompt(interaction.channel, {
-        ...session,
-        step: 'paid_confirm',
-        data
-      });
-      return;
-    }
-
-    if (interaction.customId === 'intake_activity_select') {
-      if (session.step !== 'standard_activity') {
-        return interaction.reply({
-          content: 'This activity prompt is no longer active.',
-          ephemeral: true
-        });
-      }
-
-      const activity = interaction.values[0];
-      const data = {
-        ...(session.data || {}),
-        activity
-      };
-
-      await updateIntakeSession(interaction.channel.id, {
-        step: 'standard_winskills',
-        data
-      });
-
-      await interaction.deferUpdate();
-
-      await sendNextIntakePrompt(interaction.channel, {
-        ...session,
-        step: 'standard_winskills',
-        data
-      });
-      return;
-    }
-
-    if (interaction.customId === 'intake_afk_select') {
-      if (session.step !== 'standard_afk') {
-        return interaction.reply({
-          content: 'This AFK prompt is no longer active.',
-          ephemeral: true
-        });
-      }
-
-      const afkFarm = interaction.values[0];
-      const data = {
-        ...(session.data || {}),
-        afkFarm
-      };
-
-      await updateIntakeSession(interaction.channel.id, {
-        step: 'standard_completed',
-        status: 'completed',
-        data
-      });
-
-      await interaction.deferUpdate();
-      await handleStandardCompletion(interaction.channel, data);
-      return;
-    }
-
-    if (interaction.customId === 'intake_paid_confirm_select') {
-      if (session.step !== 'paid_confirm') {
-        return interaction.reply({
-          content: 'This premium confirmation prompt is no longer active.',
-          ephemeral: true
-        });
-      }
-
-      const premiumAccepted = interaction.values[0];
-      const data = {
-        ...(session.data || {}),
-        premiumAccepted
-      };
-
-      await updateIntakeSession(interaction.channel.id, {
-        step: 'paid_completed',
-        status: 'completed',
-        data
-      });
-
-      await interaction.deferUpdate();
-      await handlePaidCompletion(interaction.channel, data);
-      return;
-    }
-  }
-
-  if (interaction.isButton()) {
-    if (interaction.customId === 'ticket_submit') {
-      const selectedType = userSelections.get(interaction.user.id);
-
-      if (!selectedType) {
-        await interaction.deferUpdate();
-        return;
-      }
-
-      const existingOpenTicket = await getOpenTicketByOwnerId(interaction.user.id);
-
-      if (existingOpenTicket) {
-        const typeLabel =
-          existingOpenTicket.type === 'standard'
-            ? 'Standard Application'
-            : 'Paid Application';
-
-        await interaction.reply({
-          content: `You already have an open ${typeLabel} ticket: <#${existingOpenTicket.channel_id}>. You need to close it first before opening another ticket.`,
-          ephemeral: true
-        });
-        return;
       }
 
       const categoryId =
-        selectedType === 'standard'
+        selectedType === "standard"
           ? process.env.STANDARD_CATEGORY_ID
           : process.env.PAID_CATEGORY_ID;
 
       try {
         const ticketNumber = await getNextTicketNumber(selectedType);
-        const paddedTicketNumber = String(ticketNumber).padStart(3, '0');
+        const paddedTicketNumber = String(ticketNumber).padStart(3, "0");
         const channelName = `ticket-${paddedTicketNumber}`;
 
         const ticketChannel = await interaction.guild.channels.create({
@@ -3042,15 +2954,15 @@ client.on('interactionCreate', async (interaction) => {
           permissionOverwrites: [
             {
               id: interaction.guild.id,
-              deny: [PermissionFlagsBits.ViewChannel]
+              deny: [PermissionFlagsBits.ViewChannel],
             },
             {
               id: interaction.user.id,
               allow: [
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.ReadMessageHistory
-              ]
+                PermissionFlagsBits.ReadMessageHistory,
+              ],
             },
             {
               id: process.env.STAFF_ROLE_ID,
@@ -3058,8 +2970,8 @@ client.on('interactionCreate', async (interaction) => {
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.SendMessages,
                 PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.ManageChannels
-              ]
+                PermissionFlagsBits.ManageChannels,
+              ],
             },
             {
               id: process.env.OWNER_ROLE_ID,
@@ -3067,8 +2979,8 @@ client.on('interactionCreate', async (interaction) => {
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.SendMessages,
                 PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.ManageChannels
-              ]
+                PermissionFlagsBits.ManageChannels,
+              ],
             },
             {
               id: client.user.id,
@@ -3076,48 +2988,45 @@ client.on('interactionCreate', async (interaction) => {
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.SendMessages,
                 PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.ManageChannels
-              ]
-            }
-          ]
+                PermissionFlagsBits.ManageChannels,
+              ],
+            },
+          ],
         });
 
         const typeLabel =
-          selectedType === 'standard'
-            ? 'Standard Application'
-            : 'Paid Application';
+          selectedType === "standard"
+            ? "Standard Application"
+            : "Paid Application";
 
         const welcomeEmbed = buildBotEmbed({
           title: `🎟️ ${typeLabel} Ticket`,
-          description:
-            `Welcome <@${interaction.user.id}>.\n\n✨ Please complete the automated intake questions below. Use \`..help\` at any time if you need staff assistance.\n\n📝 Until a client explicitly requests otherwise, keep all communication inside this ticket to minimize unnecessary human-to-human contact.`,
-          color: 0x57f287
+          description: `Welcome <@${interaction.user.id}>.\n\n✨ Please complete the automated intake questions below. Use \`..help\` at any time if you need staff assistance.`,
+          color: 0x57f287,
         });
 
         await ticketChannel.send({
           content: `<@${interaction.user.id}> <@&${process.env.STAFF_ROLE_ID}>`,
-          embeds: [welcomeEmbed]
+          embeds: [welcomeEmbed],
         });
 
         await createTicket({
           channelId: ticketChannel.id,
           ownerId: interaction.user.id,
           type: selectedType,
-          ticketNumber
+          ticketNumber,
         });
 
         await incrementLifetimeTicketCount(interaction.user.id);
 
         const initialStep =
-          selectedType === 'standard'
-            ? 'standard_username'
-            : 'paid_username';
+          selectedType === "standard" ? "standard_username" : "paid_username";
 
         await createIntakeSession({
           channelId: ticketChannel.id,
           ownerId: interaction.user.id,
           ticketType: selectedType,
-          step: initialStep
+          step: initialStep,
         });
 
         await sendNextIntakePrompt(ticketChannel, {
@@ -3125,104 +3034,507 @@ client.on('interactionCreate', async (interaction) => {
           owner_id: interaction.user.id,
           ticket_type: selectedType,
           step: initialStep,
-          status: 'active',
-          data: {}
+          status: "active",
+          data: {},
+        });
+
+        await interaction.followUp({
+          content: `✅ Your ${typeLabel.toLowerCase()} has been created: ${ticketChannel}`,
+          ephemeral: true,
+        });
+      } catch (error) {
+        console.error("Ticket creation error:", error);
+        await interaction.followUp({
+          content: "❌ There was an error creating your ticket.",
+          ephemeral: true,
+        });
+      }
+
+      return;
+    }
+
+    if (interaction.customId === "ticket_help_select") {
+      const ticketInfo = await getTicketByChannelId(interaction.channel.id);
+
+      if (!ticketInfo || ticketInfo.status !== "open") {
+        return interaction.reply({
+          content: "This help menu can only be used in an open ticket.",
+          ephemeral: true,
+        });
+      }
+
+      if (interaction.user.id !== ticketInfo.owner_id) {
+        return interaction.reply({
+          content: "Only the ticket owner can use this help menu.",
+          ephemeral: true,
+        });
+      }
+
+      const helpChoice = interaction.values[0];
+      await interaction.deferUpdate();
+
+      if (helpChoice === "staff_team") {
+        clearPendingHelpSelection(interaction.channel.id);
+
+        await interaction.channel.send({
+          content: `<@&${process.env.STAFF_ROLE_ID}>`,
+          embeds: [
+            buildBotEmbed({
+              title: "🆘 Client Help Request",
+              description: `✨ <@${interaction.user.id}> needs assistance in this ticket.`,
+            }),
+          ],
+        });
+
+        return;
+      }
+
+      if (helpChoice === "specific_staff") {
+        setPendingHelpSelection(interaction.channel.id, interaction.user.id);
+
+        await interaction.channel.send({
+          embeds: [
+            buildBotEmbed({
+              title: "🆘 Specific Staff Request",
+              description:
+                "Paste the Discord ID of the specific staff member you want to ping. They must have access to this ticket. If you want to switch back, run `..help` again.",
+            }),
+          ],
+        });
+
+        return;
+      }
+    }
+
+    const session = await getIntakeSession(interaction.channel.id);
+
+    if (!session || session.status !== "active") {
+      return interaction.reply({
+        content: "This intake prompt is no longer active.",
+        ephemeral: true,
+      });
+    }
+
+    if (interaction.user.id !== session.owner_id) {
+      return interaction.reply({
+        content: "Only the ticket owner can answer this intake prompt.",
+        ephemeral: true,
+      });
+    }
+
+    if (interaction.customId === "intake_username_confirm_select") {
+      if (
+        session.step !== "standard_username_confirm" &&
+        session.step !== "paid_username_confirm"
+      ) {
+        return interaction.reply({
+          content: "This username confirmation prompt is no longer active.",
+          ephemeral: true,
+        });
+      }
+
+      const answer = interaction.values[0];
+      const pendingUsername = session.data?.pendingUsername || "";
+      const currentData = session.data || {};
+
+      await interaction.deferUpdate();
+
+      if (answer === "no") {
+        const newData = { ...currentData };
+        delete newData.pendingUsername;
+
+        const resetStep =
+          session.step === "standard_username_confirm"
+            ? "standard_username"
+            : "paid_username";
+
+        await updateIntakeSession(interaction.channel.id, {
+          step: resetStep,
+          data: newData,
+        });
+
+        await sendNextIntakePrompt(interaction.channel, {
+          ...session,
+          step: resetStep,
+          data: newData,
+        });
+        return;
+      }
+
+      const newData = {
+        ...currentData,
+        username: pendingUsername,
+      };
+      delete newData.pendingUsername;
+
+      const nextStep =
+        session.step === "standard_username_confirm"
+          ? "standard_platform"
+          : "paid_platform";
+
+      await updateIntakeSession(interaction.channel.id, {
+        step: nextStep,
+        data: newData,
+      });
+
+      await sendNextIntakePrompt(interaction.channel, {
+        ...session,
+        step: nextStep,
+        data: newData,
+      });
+      return;
+    }
+
+    if (interaction.customId === "intake_platform_select") {
+      if (
+        session.step !== "standard_platform" &&
+        session.step !== "paid_platform"
+      ) {
+        return interaction.reply({
+          content: "This platform prompt is no longer active.",
+          ephemeral: true,
+        });
+      }
+
+      const platform = interaction.values[0];
+      const data = {
+        ...(session.data || {}),
+        platform,
+      };
+
+      await interaction.deferUpdate();
+
+      if (session.step === "standard_platform") {
+        await updateIntakeSession(interaction.channel.id, {
+          step: "standard_activity",
+          data,
+        });
+
+        await sendNextIntakePrompt(interaction.channel, {
+          ...session,
+          step: "standard_activity",
+          data,
+        });
+        return;
+      }
+
+      await updateIntakeSession(interaction.channel.id, {
+        step: "paid_confirm",
+        data,
+      });
+
+      await sendNextIntakePrompt(interaction.channel, {
+        ...session,
+        step: "paid_confirm",
+        data,
+      });
+      return;
+    }
+
+    if (interaction.customId === "intake_activity_select") {
+      if (session.step !== "standard_activity") {
+        return interaction.reply({
+          content: "This activity prompt is no longer active.",
+          ephemeral: true,
+        });
+      }
+
+      const activity = interaction.values[0];
+      const data = {
+        ...(session.data || {}),
+        activity,
+      };
+
+      await updateIntakeSession(interaction.channel.id, {
+        step: "standard_winskills",
+        data,
+      });
+
+      await interaction.deferUpdate();
+
+      await sendNextIntakePrompt(interaction.channel, {
+        ...session,
+        step: "standard_winskills",
+        data,
+      });
+      return;
+    }
+
+    if (interaction.customId === "intake_afk_select") {
+      if (session.step !== "standard_afk") {
+        return interaction.reply({
+          content: "This AFK prompt is no longer active.",
+          ephemeral: true,
+        });
+      }
+
+      const afkFarm = interaction.values[0];
+      const data = {
+        ...(session.data || {}),
+        afkFarm,
+      };
+
+      await updateIntakeSession(interaction.channel.id, {
+        step: "standard_completed",
+        status: "completed",
+        data,
+      });
+
+      await interaction.deferUpdate();
+      await handleStandardCompletion(interaction.channel, data);
+      return;
+    }
+
+    if (interaction.customId === "intake_paid_confirm_select") {
+      if (session.step !== "paid_confirm") {
+        return interaction.reply({
+          content: "This premium confirmation prompt is no longer active.",
+          ephemeral: true,
+        });
+      }
+
+      const premiumAccepted = interaction.values[0];
+      const data = {
+        ...(session.data || {}),
+        premiumAccepted,
+      };
+
+      await updateIntakeSession(interaction.channel.id, {
+        step: "paid_completed",
+        status: "completed",
+        data,
+      });
+
+      await interaction.deferUpdate();
+      await handlePaidCompletion(interaction.channel, data);
+      return;
+    }
+  }
+
+  if (interaction.isButton()) {
+    if (interaction.customId === "ticket_submit") {
+      const selectedType = userSelections.get(interaction.user.id);
+
+      if (!selectedType) {
+        await interaction.deferUpdate();
+        return;
+      }
+
+      const existingOpenTicket = await getOpenTicketByOwnerId(
+        interaction.user.id,
+      );
+
+      if (existingOpenTicket) {
+        const typeLabel =
+          existingOpenTicket.type === "standard"
+            ? "Standard Application"
+            : "Paid Application";
+
+        await interaction.reply({
+          content: `You already have an open ${typeLabel} ticket: <#${existingOpenTicket.channel_id}>. You need to close it first before opening another ticket.`,
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const categoryId =
+        selectedType === "standard"
+          ? process.env.STANDARD_CATEGORY_ID
+          : process.env.PAID_CATEGORY_ID;
+
+      try {
+        const ticketNumber = await getNextTicketNumber(selectedType);
+        const paddedTicketNumber = String(ticketNumber).padStart(3, "0");
+        const channelName = `ticket-${paddedTicketNumber}`;
+
+        const ticketChannel = await interaction.guild.channels.create({
+          name: channelName,
+          type: ChannelType.GuildText,
+          parent: categoryId,
+          permissionOverwrites: [
+            {
+              id: interaction.guild.id,
+              deny: [PermissionFlagsBits.ViewChannel],
+            },
+            {
+              id: interaction.user.id,
+              allow: [
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.ReadMessageHistory,
+              ],
+            },
+            {
+              id: process.env.STAFF_ROLE_ID,
+              allow: [
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.ManageChannels,
+              ],
+            },
+            {
+              id: process.env.OWNER_ROLE_ID,
+              allow: [
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.ManageChannels,
+              ],
+            },
+            {
+              id: client.user.id,
+              allow: [
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.ManageChannels,
+              ],
+            },
+          ],
+        });
+
+        const typeLabel =
+          selectedType === "standard"
+            ? "Standard Application"
+            : "Paid Application";
+
+        const welcomeEmbed = buildBotEmbed({
+          title: `🎟️ ${typeLabel} Ticket`,
+          description: `Welcome <@${interaction.user.id}>.\n\n✨ Please complete the automated intake questions below. Use \`..help\` at any time if you need staff assistance.\n\n📝 Until a client explicitly requests otherwise, keep all communication inside this ticket to minimize unnecessary human-to-human contact.`,
+          color: 0x57f287,
+        });
+
+        await ticketChannel.send({
+          content: `<@${interaction.user.id}> <@&${process.env.STAFF_ROLE_ID}>`,
+          embeds: [welcomeEmbed],
+        });
+
+        await createTicket({
+          channelId: ticketChannel.id,
+          ownerId: interaction.user.id,
+          type: selectedType,
+          ticketNumber,
+        });
+
+        await incrementLifetimeTicketCount(interaction.user.id);
+
+        const initialStep =
+          selectedType === "standard" ? "standard_username" : "paid_username";
+
+        await createIntakeSession({
+          channelId: ticketChannel.id,
+          ownerId: interaction.user.id,
+          ticketType: selectedType,
+          step: initialStep,
+        });
+
+        await sendNextIntakePrompt(ticketChannel, {
+          channel_id: ticketChannel.id,
+          owner_id: interaction.user.id,
+          ticket_type: selectedType,
+          step: initialStep,
+          status: "active",
+          data: {},
         });
 
         await interaction.reply({
           content: `✅ Your ticket has been created: ${ticketChannel}`,
-          ephemeral: true
+          ephemeral: true,
         });
       } catch (error) {
         console.error(error);
 
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
-            content: '❌ There was an error creating your ticket.',
-            ephemeral: true
+            content: "❌ There was an error creating your ticket.",
+            ephemeral: true,
           });
         }
       }
     }
 
-    if (interaction.customId === 'intake_open_username_modal') {
+    if (interaction.customId === "intake_open_username_modal") {
       const session = await getIntakeSession(interaction.channel.id);
 
       if (
         !session ||
-        session.status !== 'active' ||
-        (session.step !== 'standard_username' && session.step !== 'paid_username')
+        session.status !== "active" ||
+        (session.step !== "standard_username" &&
+          session.step !== "paid_username")
       ) {
         return interaction.reply({
-          content: 'This username prompt is no longer active.',
-          ephemeral: true
+          content: "This username prompt is no longer active.",
+          ephemeral: true,
         });
       }
 
       if (interaction.user.id !== session.owner_id) {
         return interaction.reply({
-          content: 'Only the ticket owner can answer this intake prompt.',
-          ephemeral: true
+          content: "Only the ticket owner can answer this intake prompt.",
+          ephemeral: true,
         });
       }
 
       const modal = new ModalBuilder()
-        .setCustomId('intake_username_modal')
-        .setTitle('Enter In-Game Username');
+        .setCustomId("intake_username_modal")
+        .setTitle("Enter In-Game Username");
 
       const usernameInput = new TextInputBuilder()
-        .setCustomId('username_input')
-        .setLabel('In-Game Username')
-        .setPlaceholder('Type your in-game username')
+        .setCustomId("username_input")
+        .setLabel("In-Game Username")
+        .setPlaceholder("Type your in-game username")
         .setRequired(true)
         .setStyle(TextInputStyle.Short);
 
-      modal.addComponents(
-        new ActionRowBuilder().addComponents(usernameInput)
-      );
+      modal.addComponents(new ActionRowBuilder().addComponents(usernameInput));
 
       await interaction.showModal(modal);
       return;
     }
 
-    if (interaction.customId === 'intake_open_winskills_modal') {
+    if (interaction.customId === "intake_open_winskills_modal") {
       const session = await getIntakeSession(interaction.channel.id);
 
-      if (!session || session.status !== 'active' || session.step !== 'standard_winskills') {
+      if (
+        !session ||
+        session.status !== "active" ||
+        session.step !== "standard_winskills"
+      ) {
         return interaction.reply({
-          content: 'This wins and kills prompt is no longer active.',
-          ephemeral: true
+          content: "This wins and kills prompt is no longer active.",
+          ephemeral: true,
         });
       }
 
       if (interaction.user.id !== session.owner_id) {
         return interaction.reply({
-          content: 'Only the ticket owner can answer this intake prompt.',
-          ephemeral: true
+          content: "Only the ticket owner can answer this intake prompt.",
+          ephemeral: true,
         });
       }
 
       const modal = new ModalBuilder()
-        .setCustomId('intake_winskills_modal')
-        .setTitle('Enter Wins & Kills');
+        .setCustomId("intake_winskills_modal")
+        .setTitle("Enter Wins & Kills");
 
       const winsInput = new TextInputBuilder()
-        .setCustomId('wins_input')
-        .setLabel('Wins')
-        .setPlaceholder('Example: 1200')
+        .setCustomId("wins_input")
+        .setLabel("Wins")
+        .setPlaceholder("Example: 1200")
         .setRequired(true)
         .setStyle(TextInputStyle.Short);
 
       const killsInput = new TextInputBuilder()
-        .setCustomId('kills_input')
-        .setLabel('Kills')
-        .setPlaceholder('Example: 3500')
+        .setCustomId("kills_input")
+        .setLabel("Kills")
+        .setPlaceholder("Example: 3500")
         .setRequired(true)
         .setStyle(TextInputStyle.Short);
 
       modal.addComponents(
         new ActionRowBuilder().addComponents(winsInput),
-        new ActionRowBuilder().addComponents(killsInput)
+        new ActionRowBuilder().addComponents(killsInput),
       );
 
       await interaction.showModal(modal);
@@ -3231,95 +3543,103 @@ client.on('interactionCreate', async (interaction) => {
   }
 
   if (interaction.isModalSubmit()) {
-    if (interaction.customId === 'intake_username_modal') {
+    if (interaction.customId === "intake_username_modal") {
       const session = await getIntakeSession(interaction.channel.id);
 
       if (
         !session ||
-        session.status !== 'active' ||
-        (session.step !== 'standard_username' && session.step !== 'paid_username')
+        session.status !== "active" ||
+        (session.step !== "standard_username" &&
+          session.step !== "paid_username")
       ) {
         return interaction.reply({
-          content: 'This username prompt is no longer active.',
-          ephemeral: true
+          content: "This username prompt is no longer active.",
+          ephemeral: true,
         });
       }
 
       if (interaction.user.id !== session.owner_id) {
         return interaction.reply({
-          content: 'Only the ticket owner can answer this intake prompt.',
-          ephemeral: true
+          content: "Only the ticket owner can answer this intake prompt.",
+          ephemeral: true,
         });
       }
 
-      const username = interaction.fields.getTextInputValue('username_input').trim();
+      const username = interaction.fields
+        .getTextInputValue("username_input")
+        .trim();
 
       if (!username) {
         return interaction.reply({
           embeds: [
             buildBotEmbed({
-              title: '❌ Invalid Username',
-              description: 'Please enter a valid in-game username.'
-            })
+              title: "❌ Invalid Username",
+              description: "Please enter a valid in-game username.",
+            }),
           ],
-          ephemeral: true
+          ephemeral: true,
         });
       }
 
       const currentData = session.data || {};
       const data = {
         ...currentData,
-        pendingUsername: username
+        pendingUsername: username,
       };
 
       const nextStep =
-        session.step === 'standard_username'
-          ? 'standard_username_confirm'
-          : 'paid_username_confirm';
+        session.step === "standard_username"
+          ? "standard_username_confirm"
+          : "paid_username_confirm";
 
       await updateIntakeSession(interaction.channel.id, {
         step: nextStep,
-        data
+        data,
       });
 
       await interaction.reply({
         embeds: [
           buildBotEmbed({
-            title: '✅ Username Saved',
-            description: 'Please confirm your username with the dropdown in the ticket.'
-          })
+            title: "✅ Username Saved",
+            description:
+              "Please confirm your username with the dropdown in the ticket.",
+          }),
         ],
-        ephemeral: true
+        ephemeral: true,
       });
 
       await sendNextIntakePrompt(interaction.channel, {
         ...session,
         step: nextStep,
-        data
+        data,
       });
 
       return;
     }
 
-    if (interaction.customId === 'intake_winskills_modal') {
+    if (interaction.customId === "intake_winskills_modal") {
       const session = await getIntakeSession(interaction.channel.id);
 
-      if (!session || session.status !== 'active' || session.step !== 'standard_winskills') {
+      if (
+        !session ||
+        session.status !== "active" ||
+        session.step !== "standard_winskills"
+      ) {
         return interaction.reply({
-          content: 'This wins and kills prompt is no longer active.',
-          ephemeral: true
+          content: "This wins and kills prompt is no longer active.",
+          ephemeral: true,
         });
       }
 
       if (interaction.user.id !== session.owner_id) {
         return interaction.reply({
-          content: 'Only the ticket owner can answer this intake prompt.',
-          ephemeral: true
+          content: "Only the ticket owner can answer this intake prompt.",
+          ephemeral: true,
         });
       }
 
-      const rawWins = interaction.fields.getTextInputValue('wins_input');
-      const rawKills = interaction.fields.getTextInputValue('kills_input');
+      const rawWins = interaction.fields.getTextInputValue("wins_input");
+      const rawKills = interaction.fields.getTextInputValue("kills_input");
 
       const wins = parseIntegerInput(rawWins);
       const kills = parseIntegerInput(rawKills);
@@ -3328,39 +3648,41 @@ client.on('interactionCreate', async (interaction) => {
         return interaction.reply({
           embeds: [
             buildBotEmbed({
-              title: '❌ Invalid Wins/Kills Input',
-              description: 'Wins and kills must both be whole numbers. Commas are okay, but no letters or symbols.'
-            })
+              title: "❌ Invalid Wins/Kills Input",
+              description:
+                "Wins and kills must both be whole numbers. Commas are okay, but no letters or symbols.",
+            }),
           ],
-          ephemeral: true
+          ephemeral: true,
         });
       }
 
       const data = {
         ...(session.data || {}),
         wins,
-        kills
+        kills,
       };
 
       await updateIntakeSession(interaction.channel.id, {
-        step: 'standard_afk',
-        data
+        step: "standard_afk",
+        data,
       });
 
       await interaction.reply({
         embeds: [
           buildBotEmbed({
-            title: '✅ Wins & Kills Saved',
-            description: 'Your wins and kills were accepted. The next question has been posted in the ticket.'
-          })
+            title: "✅ Wins & Kills Saved",
+            description:
+              "Your wins and kills were accepted. The next question has been posted in the ticket.",
+          }),
         ],
-        ephemeral: true
+        ephemeral: true,
       });
 
       await sendNextIntakePrompt(interaction.channel, {
         ...session,
-        step: 'standard_afk',
-        data
+        step: "standard_afk",
+        data,
       });
 
       return;
@@ -3368,11 +3690,11 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
-client.on('channelDelete', async (channel) => {
+client.on("channelDelete", async (channel) => {
   try {
     const ticketInfo = await getTicketByChannelId(channel.id);
     if (!ticketInfo) return;
-    if (ticketInfo.status === 'deleted') return;
+    if (ticketInfo.status === "deleted") return;
 
     if (ticketInfo.is_queued) {
       await clearQueueForClosedOrDeletedTicket(channel.id);
@@ -3387,7 +3709,7 @@ client.on('channelDelete', async (channel) => {
     await stopIntakeSession(channel.id);
     clearPendingHelpSelection(channel.id);
   } catch (error) {
-    console.error('channelDelete sync error:', error);
+    console.error("channelDelete sync error:", error);
   }
 });
 
