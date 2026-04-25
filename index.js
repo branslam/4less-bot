@@ -251,22 +251,7 @@ async function resolveUser(guild, rawInput) {
   return await findMemberFromQuery(guild, query);
 }
 
-async function getTicketOwnerOrMentioned(message) {
-  const ticketInfo = await getTicketByChannelId(message.channel.id);
-  if (!ticketInfo) return null;
 
-  // If replied to a message, use that author
-  if (message.reference) {
-    const repliedMsg = await message.channel.messages
-      .fetch(message.reference.messageId)
-      .catch(() => null);
-    if (repliedMsg && !repliedMsg.author.bot) {
-      return repliedMsg.author;
-    }
-  }
-
-  return null;
-}
 
 function parseDurationString(raw) {
   const match = String(raw || "")
@@ -1241,10 +1226,10 @@ client.on("messageCreate", async (message) => {
   }
 
     // ====================== LEADERBOARD SELECTION HANDLER (1 or 2) ======================
-  const pendingAppSelection = pendingAppSelections.get(message.channel.id);
-  if (pendingAppSelection && pendingAppSelection.ownerId === message.author.id && pendingAppSelection.type === 'leaderboard') {
+  const pendingLB = pendingAppSelections.get(message.channel.id);
+  if (pendingLB && pendingLB.ownerId === message.author.id && pendingLB.type === 'leaderboard') {
     const choice = parseInt(message.content.trim());
-    const page = pendingAppSelection.page || 1;
+    const page = pendingLB.page || 1;
 
     clearPendingAppSelection(message.channel.id);
 
