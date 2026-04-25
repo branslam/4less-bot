@@ -1216,85 +1216,28 @@ client.on("messageCreate", async (message) => {
   const command = args.shift()?.toLowerCase();
   console.log("COMMAND DETECTED:", command);
 
-  // ====================== COUNTING COMMANDS (LB & HOF) ======================
-  if (command === "leaderboard" || command === "lb" || command === "hof") {
-    if (message.channel.id !== process.env.COUNTING_CHANNEL_ID) {
-      return; // silently ignore if not in counting channel
-    }
+  // ====================== INTERACTIVE LEADERBOARD ======================
+  if (command === 'leaderboard' || command === 'lb') {
+    if (message.channel.id !== process.env.COUNTING_CHANNEL_ID) return;
 
-    try {
-      if (command === "leaderboard" || command === "lb") {
-        const top = await getTopStreaks(10);
+    const page = parseInt(args[0]) || 1;
 
-        if (top.length === 0) {
-          return message.reply({
-            embeds: [
-              buildBotEmbed({
-                title: "🏆 Counting Leaderboard",
-                description:
-                  "No high scores yet. Be the first to set a record!",
-              }),
-            ],
-          });
-        }
+    const embed = buildBotEmbed({
+      title: '🏆 Leaderboard Selection',
+      description: '**Reply with one of the following:**\n`1` — Current Leaderboard\n`2` — Legacy Leaderboard (Old one)',
+      color: 0x5865f2
+    });
 
-        const lines = top.map((entry, i) => {
-          const date = entry.highest_streak_date
-            ? `<t:${Math.floor(new Date(entry.highest_streak_date).getTime() / 1000)}:D>`
-            : "Unknown";
-          return `**#${i + 1}** <@${entry.user_id}> — **${entry.highest_streak}** (${date})`;
-        });
+    await message.reply({ embeds: [embed] });
 
-        return message.reply({
-          embeds: [
-            buildBotEmbed({
-              title: "🏆 Counting Leaderboard",
-              description: lines.join("\n"),
-            }),
-          ],
-        });
-      }
+    // Store what the user wants
+    pendingAppSelections.set(message.channel.id, {
+      ownerId: message.author.id,
+      type: 'leaderboard',
+      page: page
+    });
 
-      if (command === "hof") {
-        const top = await getTopMistakes(10);
-
-        if (top.length === 0) {
-          return message.reply({
-            embeds: [
-              buildBotEmbed({
-                title: "💀 Hall of Shame",
-                description: "No mistakes yet. Impressive!",
-              }),
-            ],
-          });
-        }
-
-        const lines = top.map(
-          (entry, i) =>
-            `**#${i + 1}** <@${entry.user_id}> — **${entry.total_mistakes}** mistakes`,
-        );
-
-        return message.reply({
-          embeds: [
-            buildBotEmbed({
-              title: "💀 Hall of Shame",
-              description: lines.join("\n"),
-            }),
-          ],
-        });
-      }
-    } catch (error) {
-      console.error("[LB/HOF ERROR]", error);
-      return message.reply({
-        embeds: [
-          buildBotEmbed({
-            title: "❌ Error",
-            description:
-              "There was an error fetching the leaderboard. Check console.",
-          }),
-        ],
-      });
-    }
+    return;
   }
 
   // ====================== LOL COMMAND ======================
