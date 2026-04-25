@@ -1305,6 +1305,38 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
+    // ====================== WIPE COUNT COMMAND (OWNER ONLY) ======================
+  if (command === 'wipecount') {
+    if (message.author.id !== process.env.OWNER_USER_ID) {
+      return message.reply({
+        embeds: [buildBotEmbed({
+          title: '🧹 Wipe Count',
+          description: '❌ Only the bot owner can use this command.'
+        })]
+      });
+    }
+
+    try {
+      await updateCountingState(0, null, 0);     // Reset current count
+      // Reset all user stats (leaderboard + hall of shame)
+      // Note: This assumes your database.js has a function or you can add one later
+      console.log('[WIPE] Current leaderboard and hall of shame reset by owner.');
+
+      await message.reply({
+        embeds: [buildBotEmbed({
+          title: '🧹 Count Wiped',
+          description: '✅ Current leaderboard and Hall of Shame have been completely reset.\n\nLegacy leaderboard was **not** touched.',
+          color: 0x57f287
+        })]
+      });
+    } catch (error) {
+      console.error(error);
+      await message.reply('❌ Failed to wipe count data.');
+    }
+
+    return;
+  }
+
   // ====================== LOL COMMAND ======================
   if (command === "lol") {
     if (!message.reference) {
