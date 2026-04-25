@@ -1240,6 +1240,71 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
+    // ====================== LEADERBOARD SELECTION HANDLER (1 or 2) ======================
+  const pendingAppSelection = pendingAppSelections.get(message.channel.id);
+  if (pendingAppSelection && pendingAppSelection.ownerId === message.author.id && pendingAppSelection.type === 'leaderboard') {
+    const choice = parseInt(message.content.trim());
+    const page = pendingAppSelection.page || 1;
+
+    clearPendingAppSelection(message.channel.id);
+
+    if (choice === 1) {
+      // Current Leaderboard
+      const top = await getTopStreaks(100);
+      const start = (page - 1) * 10;
+      const pageData = top.slice(start, start + 10);
+
+      if (pageData.length === 0) {
+        return message.reply('No more entries on that page.');
+      }
+
+      const lines = pageData.map((entry, i) => {
+        const rank = start + i + 1;
+        const date = entry.highest_streak_date 
+          ? `<t:${Math.floor(new Date(entry.highest_streak_date).getTime()/1000)}:D>` 
+          : 'Unknown';
+        return `**#${rank}** <@${entry.user_id}> — **${entry.highest_streak}** (${date})`;
+      });
+
+      return message.reply({
+        embeds: [buildBotEmbed({
+          title: `🏆 Current Leaderboard (Page ${page})`,
+          description: lines.join('\n'),
+          footerNote: `Page ${page} of ${Math.ceil(top.length / 10)}`
+        })]
+      });
+    } 
+    else if (choice === 2) {
+      // Legacy Leaderboard (Static - Old One)
+      const legacy = [
+        "ananitoo — 2,988", "noniconikai — 1,830", "alberto_a_ — 802",
+        "silverblohsh — 547", "mevel — 507", "v0z9_ — 349", "f4inex — 313",
+        "lf1304 — 305", "randyjat — 268", "filthysecrets — 236",
+        "rzzwxm — 164", "notchxrley — 151", "tommyyxzq — 150", "d190 — 141",
+        "p2wo — 136", "sanslly — 134", "blurtxr — 134", "yebbaxo — 131",
+        ".bacon_army — 121", "x_xmateyy — 119"
+        // Add more if you want, but top 10 per page will be shown
+      ];
+
+      const start = (page - 1) * 10;
+      const pageData = legacy.slice(start, start + 10);
+
+      if (pageData.length === 0) {
+        return message.reply('No more entries on that page.');
+      }
+
+      return message.reply({
+        embeds: [buildBotEmbed({
+          title: `🏆 Legacy Leaderboard (Page ${page})`,
+          description: pageData.map((entry, i) => `**#${start + i + 1}** ${entry}`).join('\n'),
+          footerNote: `Page ${page} of ${Math.ceil(legacy.length / 10)} • Old Counting Leaderboard`
+        })]
+      });
+    }
+
+    return;
+  }
+
   // ====================== LOL COMMAND ======================
   if (command === "lol") {
     if (!message.reference) {
