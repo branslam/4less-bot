@@ -1337,6 +1337,34 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
+    // ====================== DIRECT HOF COMMAND ======================
+  if (command === 'hof') {
+    if (message.channel.id !== process.env.COUNTING_CHANNEL_ID) return;
+
+    const top = await getTopMistakes(10);
+
+    if (top.length === 0) {
+      return message.reply({
+        embeds: [buildBotEmbed({
+          title: '💀 Hall of Shame',
+          description: 'No mistakes yet. Impressive!'
+        })]
+      });
+    }
+
+    const lines = top.map((entry, i) => 
+      `**#${i+1}** <@${entry.user_id}> — **${entry.total_mistakes}** mistakes`
+    );
+
+    return message.reply({
+      embeds: [buildBotEmbed({
+        title: '💀 Hall of Shame',
+        description: lines.join('\n'),
+        footerNote: 'Top 10 Most Mistakes'
+      })]
+    });
+  }
+
   // ====================== LOL COMMAND ======================
   if (command === "lol") {
     if (!message.reference) {
